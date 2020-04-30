@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainMessageMapper">
+
+	<resultMap type="MainMessage" id="MainMessageMap">
+		<result column="rn" property="rn"/>
+		<result column="sender_image" property="senderImage"/>
+		<result column="sender_name" property="senderName"/>
+		<association property="message" javaType="Message">
+			<id column="message_no" property="messageNo"/>
+			<id column="message_sender_no" property="messageSenderNo"/>
+			<id column="message_receiver_no" property="messageReceiverNo"/>
+			<id column="message_content" property="messageContent"/>
+			<id column="message_date" property="messageDate"/>
+			<id column="message_state" property="messageState"/>
+		</association>
+	</resultMap>
+	
+	<!-- 알림을 헤더에 디스플레이 하기 위한 맵퍼 -->
+	<select id="selectMessageNoticeList" resultMap="MainMessageMap">
+		select * from(select rownum rn, message_table.* from(select message.*, message_no_temp, sender_name, sender_image from message left join member on message_receiver_no=member_no 
+		left join (select message_no message_no_temp, member_name sender_name, member_image sender_image from message join member on message_sender_no=member_no) 
+		on message_no_temp = message_no where (member_no=#{memberNo} or message_receiver_no is null) and message_state=3 order by message_date desc)message_table) where rn between 1 and 5
+	</select>
+	
+	<!-- 메세지를 헤더에 디스플레이 하기 위한 맵퍼 -->
+	<select id="selectMessageHeaderList" resultMap="MainMessageMap">
+		select * from(select rownum rn, message_table.* from(select message.*, message_no_temp, sender_name, sender_image from message join member on message_receiver_no=member_no 
+		left join (select message_no message_no_temp, member_name sender_name, member_image sender_image from message join member on message_sender_no=member_no) 
+		on message_no_temp = message_no where member_no=#{memberNo} and message_state=1 order by message_date desc)message_table) where rn between 1 and 5
+	</select>
+	
+	<!-- 메인페이지 헤더에 새로 온 메세지 카운팅 -->
+	<select id="countingMessageHeader" resultType="MainMessageCount">
+		SELECT (SELECT COUNT(*) FROM message join member on message_receiver_no=member_no where member_no=#{memberNo} and message_state=1) new_Message_Count, 
+		(SELECT COUNT(*) FROM message left join member on message_receiver_no=member_no where member_no=#{memberNo} and message_state=3) new_Notice_Count FROM DUAL
+	</select>
+	
+	<!-- 메인 메세지 입력(전송) -->
+	<insert id="insertMessage">
+		<selectKey resultType="int" keyProperty="messageNo" order="BEFORE">
+			select message_seq.nextval from dual
+		</selectKey>
+		insert into message values(#{messageNo}, #{messageSenderNo}, #{messageReceiverNo}, #{messageContent}, sysdate, 1)
+	</insert>
+	
+	<!-- 마이페이지 메세지 리스트 -->
+	<select id="selectMessageMypageList" resultMap="MainMessageMap">
+		select * from 
+			(select rownum rn, mypage_message.* from 
+			(select * from message left join member on message_receiver_no=member_no left join  
+			(select message_no message_no_temp, member_no sender_no, member_name sender_name, member_image sender_image from message left join member on message_sender_no=member_no) on message_no_temp = message_no 
+			where (message_receiver_no=#{messageReceiverNo} or message_receiver_no is null)
+				<if test="messageState == 1">
+					and (message_state=1 or message_state=2) 
+				</if>
+				<if test="messageState == 3">
+					and (message_state=3 or message_state=5) 
+				</if>
+				<if test="messageState == 9">
+				and (message_state=1 or message_state=2 or message_state=3 or message_state=5) 
+				</if>   
+			order by message_date desc) mypage_message) where rn between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 마이페이지 메세지 리스트를 위한 카운터 -->
+	<select id="selectMessageMypageCount" resultType="int">
+		select count(message_no) from message where (message_receiver_no=#{messageReceiverNo} or message_receiver_no is null) 
+			<if test="messageState == 1">
+			and (message_state=1 or message_state=2) 
+			</if>
+			<if test="messageState == 3">
+			and (message_state=3 or message_state=5) 
+			</if>  
+			<if test="messageState == 9">
+			and (message_state=1 or message_state=2 or message_state=3 or message_state=5) 
+			</if> 
+	</select>
+	
+	<update id="updateMessageList">
+		update message set message_state=2 where message_state=1 and message_receiver_no=#{memberNo}
+	</update>
+	
+	<update id="updateNoticeList">
+		update message set message_state=4 where message_state=3 and message_receiver_no=#{memberNo}
+	</update>
+</mapper>

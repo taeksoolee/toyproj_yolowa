@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainClaimMapper">
+	<!-- 메인 클레임 입력(전송) 호스트 디테일 페이지 신고 -->
+	<insert id="insertClaimDetail">
+		<selectKey resultType="int" keyProperty="claimNo" order="BEFORE">
+			select claim_seq.nextval from dual
+		</selectKey>
+		insert into claim values(#{claimNo}, 2, #{claimApplicantNo}, #{claimSuspectNo}, #{claimSuspectHostingNo}, null, sysdate, #{claimReason}, 1)
+	</insert>
+	
+	<!-- 메인 클레임 입력(전송) 호스트 디테일 페이지 신고 -->
+	<insert id="insertClaimGuest">
+		<selectKey resultType="int" keyProperty="claimNo" order="BEFORE">
+			select claim_seq.nextval from dual
+		</selectKey>
+		insert into claim values(#{claimNo}, 1, #{claimApplicantNo}, #{claimSuspectNo}, null, null, sysdate, #{claimReason}, 1)
+	</insert>
+</mapper>

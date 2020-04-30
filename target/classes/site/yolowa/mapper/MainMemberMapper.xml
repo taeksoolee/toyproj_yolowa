@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainMemberMapper">
+<insert id="insertMainMember" parameterType="Member">
+	insert into member (member_no, member_email, member_password, member_name, member_birthday, member_mailing, member_join_date, member_state, member_sex, member_host_state)
+	values(member_seq.nextval, #{memberEmail}, #{memberPassword}, #{memberName}, #{memberBirthday}, #{memberMailing}, sysdate,1, 0, 0)	
+</insert>
+
+<update id="updateMainMember" parameterType="Member">
+	update member
+	<set>
+		<if test="memberName!=null and memberName!=''">
+			member_name=#{memberName },	
+		</if>
+		<if test="memberEmail!=null and memberEmail!=''">
+			member_email=#{memberEmail },	
+		</if>
+		<if test="memberPassword!=null and memberPassword!=''">
+			member_password=#{memberPassword },	
+		</if>
+		<if test="memberBirthday!=null and memberBirthday!=''">
+			member_Birthday=#{memberBirthday },	
+		</if>
+		<if test="memberPhone!=null and memberPhone!=''">
+			member_Phone=#{memberPhone },	
+		</if>
+		<if test="memberMailing!=null and memberMailing!=''">
+			member_Mailing=#{memberMailing },	
+		</if>
+		<if test="memberProfile!=null and memberProfile!=''">
+			member_Profile=#{memberProfile },	
+		</if>
+		<if test="memberSex!=null and memberSex!=''">
+			member_Sex=#{memberSex },	
+		</if>
+		<if test="memberAddress!=null and memberAddress!=''">
+			member_Address=#{memberAddress },	
+		</if>
+	</set>
+	  where member_no=#{memberNo}
+</update>
+
+<update id="updateMainNewPasswdMember" parameterType="Member">
+	update member set member_password=#{memberPassword} where member_email=#{memberEmail}
+</update>
+
+<update id="updateMainImageMember" parameterType="Member">
+	update member set member_image=#{memberImage} where member_email=#{memberEmail}
+</update>
+
+<!-- 탈퇴한 회원으로 만드는 update문 -->
+<update id="deleteMainMember">
+	update member set member_state=0 where member_email=#{email}
+</update>
+
+<select id="selectMainMember" resultType="Member">
+	select * from member where member_email=#{email}
+</select>
+
+<update id="updateMainJoindateMember">
+	update member set member_last_login=sysdate where member_email=#{email}
+</update>
+
+<update id="updateMemberHostState">
+	update member set member_host_state=1 where member_no=#{memberNo}
+</update>
+
+
+</mapper>

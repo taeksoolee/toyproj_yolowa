@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainReservationMapper">
+	
+	<!-- mypage bookmark 출력을 위한 맵퍼 -->
+	<resultMap type="MypageBookmark" id="displayBookmark">
+		<association property="reservation" javaType="Reservation">
+			<id column="reservation_no" property="reservationNo" />
+			<result column="reservation_hosting_no" property="reservationHostingNo" />
+			<result column="reservation_member_no" property="reservationMemberNo" />
+			<result column="reservation_state" property="reservationState" />
+			<result column="reservation_canceler" property="reservationCanceler" />
+			<result column="reservation_check_in" property="reservationCheckIn" />
+			<result column="reservation_check_out" property="reservationCheckOut" />
+			<result column="reservation_guest_num" property="reservationGuestNum" />
+			<result column="reservation_commission" property="reservationCommission" />
+			<result column="reservation_total_price" property="reservationTotalPrice" />
+			<result column="reservation_date" property="reservationDate" />
+			<result column="reservation_name" property="reservationName" />
+			<result column="reservation_email" property="reservationEmail" />
+			<result column="reservation_phone" property="reservationPhone" />
+			<result column="reservation_card_num" property="reservationCardNum" />
+		</association>
+		<association property="hosting" javaType="Hosting">
+			<id column="hosting_no" property="hostingNo"/>
+			<result column="hosting_member_no" property="hostingMemberNo"/>
+			<result column="hosting_address" property="hostingAddress"/>
+			<result column="hosting_name" property="hostingName"/>
+			<result column="hosting_date" property="hostingDate"/>
+			<result column="hosting_desc" property="hostingDesc"/>
+			<result column="hosting_image" property="hostingImage"/>
+			<result column="hosting_category" property="hostingCategory"/>
+			<result column="hosting_state" property="hostingState"/>
+			<result column="hosting_price" property="hostingPrice"/>
+			<result column="hosting_private" property="hostingPrivate"/>
+			<result column="hosting_room" property="hostingRoom"/>
+			<result column="hosting_person" property="hostingPerson"/>
+			<result column="hosting_bathroom" property="hostingBathroom"/>
+			<result column="hosting_bed" property="hostingBed"/>
+			<result column="hosting_amenities" property="hostingAmenities"/>
+			<result column="hosting_safety" property="hostingSafety"/>
+			<result column="hosting_facilities" property="hostingFacilities"/>
+			<result column="hosting_rule" property="hostingRule"/>
+			<result column="hosting_rule_detail" property="hostingRuleDetail"/>
+			<result column="hosting_latitude" property="hostingLatitude"/>
+			<result column="hosting_longitude" property="hostingLongitude"/>
+			<result column="hosting_view_count" property="hostingViewCount"/>
+			<result column="hosting_card_num" property="hostingCardNum"/>
+		</association>
+	</resultMap>
+	
+	<!-- 메인디테일 페이지 예약 신청 -->
+	<insert id="insertReservation">
+		<selectKey resultType="int" keyProperty="reservationNo" order="BEFORE">
+			select reservation_seq.nextval from dual
+		</selectKey>
+		insert into reservation values(#{reservationNo}, #{reservationHostingNo}, #{reservationMemberNo}, 1, null, #{reservationCheckIn}, 
+			#{reservationCheckOut}, #{reservationGuestNum}, #{reservationCommission}, #{reservationTotalPrice}, sysdate, #{reservationName}, 
+			#{reservationEmail}, #{reservationPhone}, #{reservationCardNum})
+	</insert>
+	
+	<!-- 마이페이지 북마크 출력 -->
+	<select id="selectBookmarkList" resultMap="displayBookmark">
+		select * from 
+    	(select rownum rn, bookmark.* from 
+    	(select * from hosting join reservation on hosting_no=reservation_hosting_no where reservation_member_no=#{LoginMemberNo} order by reservation_date ${orderby})bookmark) 
+    	where rn between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 북마크 전체 갯수 -->
+	<select id="selectBookmarkCount" resultType="int">
+		select count(hosting_no)bookmark_total from 
+		(select * from hosting join reservation on hosting_no=reservation_hosting_no where reservation_member_no=#{loginMemberNo} order by reservation_date desc)
+	</select>
+	
+	<!-- 영수증 출력을 위한 셀렉트 -->
+	<select id="selectInvoice" resultMap="displayBookmark">
+		select * from hosting join reservation on hosting_no=reservation_hosting_no where reservation_no=#{reservationNo}
+	</select>
+	
+	<!-- 마이페이지에서 사용할 예약 상태 변경 -->
+	<update id="updateReservationState">
+		update reservation set reservation_state=#{reservationState} where reservation_no=#{reservationNo}
+	</update>
+	
+	<!-- 마이페이지 부킹 출력 -->
+	<select id="selectBookingList" resultMap="displayBookmark">
+		select * from 
+    	(select rownum rn, booking.* from 
+    	(select * from hosting join reservation on hosting_no=reservation_hosting_no where hosting_member_no=#{LoginMemberNo} 
+    	<if test="reservationState != 4">
+			and reservation_state=#{reservationState}
+		</if>
+    	order by reservation_date desc)booking) 
+    	where rn between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 부킹 전체 갯수 -->
+	<select id="selectBookingCount" resultType="int">
+		select count(hosting_no)booking_total from 
+		(select * from hosting join reservation on hosting_no=reservation_hosting_no where hosting_member_no=#{hostingMemberNo} 
+		<if test="reservationState != 4">
+			and reservation_state=#{reservationState}
+		</if>
+		order by reservation_date desc)
+	</select>
+</mapper>

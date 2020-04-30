@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Fundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+	<definition name="admin" template="/WEB-INF/views/template/adminTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/admin/header.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/admin/home/dashboard.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/admin/footer.jsp"/>
+		<put-attribute name="exit" value="/WEB-INF/views/admin/component/exit.jsp"/>
+		<put-attribute name="alert" value="/WEB-INF/views/admin/component/alert.jsp"/>
+		<put-attribute name="confirm" value="/WEB-INF/views/admin/component/confirm.jsp"/>
+		<put-attribute name="memberDetail" value="/WEB-INF/views/admin/component/detail/member.jsp"/>
+		<put-attribute name="hostingDetail" value="/WEB-INF/views/admin/component/detail/hosting.jsp"/>
+	</definition>
+	
+	<definition name="admin/*/*" extends="admin">
+		<put-attribute name="content" value="/WEB-INF/views/admin/{1}/{2}.jsp"/>
+	</definition>
+	
+	<definition name="register" template="/WEB-INF/views/main/register.jsp">
+		<put-attribute name="register" value="/WEB-INF/views/main/register.jsp"/>		
+	</definition>
+	
+	<definition name="loginPage" template="/WEB-INF/views/main/loginPage.jsp">
+		<put-attribute name="loginPage" value="/WEB-INF/views/main/loginPage.jsp"/>		
+	</definition>
+	
+	<definition name="invoice" template="/WEB-INF/views/mypage/invoice.jsp">
+		<put-attribute name="invoice" value="/WEB-INF/views/mypage/invoice.jsp"/>		
+	</definition>
+	
+	<definition name="main" template="/WEB-INF/views/template/mainTemplate.jsp">
+		<put-attribute name="alert" value="/WEB-INF/views/admin/component/alert.jsp"/>
+		<put-attribute name="confirm" value="/WEB-INF/views/admin/component/confirm.jsp"/>
+		<put-attribute name="header" value="/WEB-INF/views/main/header.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/main/index.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/main/footer.jsp"/>
+	</definition>
+	
+	<definition name="mypage" template="/WEB-INF/views/template/mypageTemplate.jsp">
+		<put-attribute name="nav" value="/WEB-INF/views/mypage/nav.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/mypage/dashboard.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/mypage/footer.jsp"/>
+		<put-attribute name="confirm" value="/WEB-INF/views/admin/component/confirm.jsp"/>
+		<put-attribute name="alert" value="/WEB-INF/views/admin/component/alert.jsp"/>
+	</definition>
+
+	<!-- main -->
+	<definition name="main/*" extends="main">
+		<put-attribute name="content" value="/WEB-INF/views/main/{1}.jsp"/>
+	</definition>
+	
+	<!-- mypage -->
+	<definition name="mypage/*" extends="mypage">
+		<put-attribute name="content" value="/WEB-INF/views/mypage/{1}.jsp"/>
+	</definition>
+</tiles-definitions>

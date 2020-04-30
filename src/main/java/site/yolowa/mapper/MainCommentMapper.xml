@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainCommentMapper">
+
+	<resultMap type="BoardComment" id="boardComment">
+		<id column="board_no" property="boardNo" />
+		<result column="member_image" property="memberImage"/>
+		<result column="member_name" property="memberName"/>
+		<result column="cnt" property="cnt"/>
+		<association property="board" javaType="Board">
+			<id column="board_no" property="boardNo"/>
+			<result column="board_writer_no" property="boardWriterNo"/>
+			<result column="board_title" property="boardTitle"/>
+			<result column="board_content" property="boardContent"/>
+			<result column="board_image" property="boardImage"/>
+			<result column="board_state" property="boardState"/>
+			<result column="board_category" property="boardCategory"/>
+			<result column="board_date" property="boardDate"/>
+			<result column="board_view_count" property="boardViewCount"/>
+			<result column="board_type" property="boardType"/>
+		</association>
+	</resultMap>
+	
+	<resultMap type="BoardCommentReview" id="boardCommentReview">
+		<id column="review_no" property="reviewNo" />
+		<result column="member_image" property="memberImage"/>
+		<result column="member_name" property="memberName"/>
+		<association property="review" javaType="Review">
+			<id column="review_no" property="reviewNo"/>
+			<result column="review_ref" property="reviewRef"/>
+			<result column="review_hosting_no" property="reviewHostingNo"/>
+			<result column="review_member_no" property="reviewMemberNo"/>
+			<result column="review_board_no" property="reviewBoardNo"/>
+			<result column="review_writer_no" property="reviewWriterNo"/>
+			<result column="review_content" property="reviewContent"/>
+			<result column="review_star" property="reviewStar"/>
+			<result column="review_date" property="reviewDate"/>
+			<result column="review_state" property="reviewState"/>
+			<result column="review_category" property="reviewCategory"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectComment" resultType="Board">
+		select * from board where board_type=1
+	</select>
+	
+	<!-- 저장된 게시글의 갯수를 출력 board_count -->
+	<select id="selectCommentCount" resultType="int">
+		select count(*) as "board_count" from (select * from board b left join member m on b.board_writer_no=m.member_no where b.board_type=1 and b.board_state!=0
+		and (b.board_content like '%'||#{keyword}||'%' or b.board_title like '%'||#{keyword}||'%' or m.member_name like '%'||#{keyword}||'%')
+		<if test="inputValue!=null and inputVlaue!=0"> 
+			and b.board_category=#{inputValue}
+		</if>
+		) 
+	</select>
+	
+	<!-- 게시판 전체 출력(페이징 처리) -->
+	<select id="selectCommentList" resultMap="boardComment">
+		select * from(select rownum rn, v.* from (select b.*, m.member_image, m.member_name, (select count(*) from review r where r.review_no = b.board_no) cnt 
+		from board b left join member m on b.board_writer_no = m.member_no where b.board_type =1 order by b.board_date desc) v) z 
+		where z.rn between ((#{pageNum} - 1) * 4 + 1) and (#{pageNum} * 4)
+	</select>
+	
+	<!-- 공지사항 디테일 페이지에 출력되는 게시물 -->
+	<select id="selectDetailComment" resultMap="boardComment">
+		select b.*, m.member_image, m.member_name from board b left join member m on b.board_writer_no = m.member_no where b.board_no=#{boardNo}   
+	</select>
+	
+	<!-- 게시물 선택하여 게시물 상세 내용 출력(board&review조인 ajax처리) -->
+	<select id="selectDetailCommentReview" resultMap="boardCommentReview">
+		select r.*, m.member_image, m.member_name from review r join board b on r.review_board_no=b.board_no left join member m on r.review_writer_no=m.member_no where review_board_no=#{boardNo} order by review_ref, review_no
+	</select>
+	
+	<!-- 검색을 통해 출력된 게시물 출력 -->
+	<select id="selectSearchCommentList" resultMap="boardComment">
+	select * from (select rownum rn, v.* from (select b.*, m.member_image, m.member_name, nvl(cnt,0) cnt from board b left join member m on b.board_writer_no = m.member_no left join (select board_no, count(*) cnt from review left join board on review_board_no=board_no group by board_no) ct on b.board_no=ct.board_no  where b.board_type=1 and board_state!=0 and (b.board_content like '%'||#{keyword}||'%' or b.board_title like '%'||#{keyword}||'%' or m.member_name like '%'||#{keyword}||'%')
+	<if test="inputValue!=null and inputVlaue!=-1"> 
+		and b.board_category=#{inputValue}
+	</if> 
+	 order by b.board_no desc) v) z where z.rn between ((#{pageNum} - 1) * 4 + 1) and (#{pageNum} * 4)
+	</select>
+	
+	<!-- 
+	카테고리별 출력 뉴스/이벤트/컬럼
+	<select id="selectCategoryCommentList" resultMap="boardComment">
+		select * from (select rownum rn, v.* from (select b.*, m.member_image, m.member_name, (select count(*) from review r where r.review_no = b.board_no) ctn 
+		from board b left join member m on b.board_writer_no = m.member_no where b.board_type = 1 and b.board_category=#{inputValue} order by b.board_date desc) v) z 
+		where z.rn between ((#{pageSize} - 1) * 4 + 1) and (#{pageSize} * 4)
+	</select>
+	 -->
+	
+	<!-- 회원이 클릭한 최신 게시물 3개씩 출력(가장 최근 게시물이 맨 위)
+	<select id="">
+		select b.board_no, b.board_image from board b where b.board_type=1 = #{inputValue}(임시)
+	</select>
+	-->
+	<select id="selectCommentCategoryCount" resultType="int">
+		select count(*) count from board b left join member m on m.member_no=b.board_writer_no where board_type=1 and board_state!=0 and board_category=#{category } and (b.board_content like '%'||#{keyword}||'%' or b.board_title like '%'||#{keyword}||'%' or m.member_name like '%'||#{keyword}||'%')
+	</select>
+	
+	<insert id="insertCommentReview">
+		<selectKey keyProperty="reviewNo" resultType="int" order="BEFORE">
+			select review_seq.nextval from dual
+		</selectKey>
+		<choose>
+		<when test="reviewRef == 0">
+			insert into review values(#{reviewNo}, #{reviewNo}, null, null, #{reviewBoardNo}, #{reviewWriterNo}, #{reviewContent}, null, sysdate, 1, 3)
+		</when>
+		<when test="reviewRef != 0">
+			insert into review values(#{reviewNo}, #{reviewRef}, null, null, #{reviewBoardNo}, #{reviewWriterNo}, #{reviewContent}, null, sysdate, 1, 3)
+		</when>
+		</choose>
+	</insert> 
+	
+	<insert id="insertClaimComment">
+		<selectKey keyProperty="claimNo" resultType="int" order="BEFORE">
+			select claim_seq.nextval from dual
+		</selectKey>
+		insert into claim values(#{claimNo}, 3, #{claimApplicantNo}, #{claimSuspectNo}, null, #{claimSuspectReviewNo}, sysdate, #{claimReason}, 1)
+	</insert>
+	
+	<select id="selectClaimReviewNo" resultType="Claim">
+		select * from claim where claim_suspect_review_no=#{reviewNo} and claim_state=1 
+	</select>
+	
+	<select id="selectCommentOrderDate4" resultType="Board">
+		select rownum, b.* from (select * from board where board_type=1 and board_state=1 order by board_date desc) b where rownum between 1 and 4
+	</select>
+</mapper>

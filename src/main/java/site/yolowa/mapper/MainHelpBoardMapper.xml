@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainHelpBoardMapper">
+
+	<!-- 도움말 게시판 출력 -->
+	<select id="selectHelpBoardList" resultType="Board">
+		select * from board where board_type=2 and board_state!=0 order by board_date DESC
+	</select>
+	
+	<!-- 도움말 게시판 검색 -->
+	<select id="selectHelpBoard" resultType="Board">
+	 	SELECT * FROM board where board_type=2 and board_state!=0 and (Board_Content like '%' || #{boardContent } || '%' or board_Title like '%' || #{boardTitle } || '%')
+	</select>
+	
+	<!-- 도움말 게시판 뷰카운트로 정렬 -->
+	<select id="selectHelpBoardViewList" resultType="Board">
+		select rownum, b.* from(select * from board where board_type=2 and board_state!=0 and board_view_count!=0 order by board_view_count DESC) b where rownum between 1 and 8
+	</select>
+	
+	<!-- 도움말 게시판 뷰 카운트 증가 -->
+	<update id="updateHelpBoardView">
+        UPDATE board SET BOARD_VIEW_COUNT=BOARD_VIEW_COUNT+1 WHERE BOARD_NO=#{boardNo}
+	</update>
+	
+	
+	
+</mapper>

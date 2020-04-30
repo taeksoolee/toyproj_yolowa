@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainHostingMapper">
+
+	<!-- 호스팅 검색을 위한 resultMap -->
+	<resultMap type="MainHostingSearch" id="MainHostingSearchMap">
+		<result column="rownum" property="rownum"/>
+		<result column="review_star_avg" property="reviewStarAvg"/>
+		<result column="review_no_count" property="reviewNoCount"/>
+		<result column="member_host_state" property="memberHostState"/>
+		<association property="review" javaType="Review">
+			<id column="review_no" property="reviewNo"/>
+			<result column="review_ref" property="reviewRef"/>
+			<result column="review_hosting_no" property="reviewHostingNo"/>
+			<result column="review_member_no" property="reviewMemberNo"/>
+			<result column="review_board_no" property="reviewBoardNo"/>
+			<result column="review_writer_no" property="reviewWriterNo"/>
+			<result column="review_conetent" property="reviewConetent"/>
+			<result column="review_star" property="reviewStar"/>
+			<result column="review_date" property="reviewDate"/>
+			<result column="review_state" property="reviewState"/>
+			<result column="review_category" property="reviewCategory"/>
+		</association>
+		<association property="hosting" javaType="Hosting">
+			<id column="hosting_no" property="hostingNo"/>
+			<result column="hosting_member_no" property="hostingMemberNo"/>
+			<result column="hosting_address" property="hostingAddress"/>
+			<result column="hosting_name" property="hostingName"/>
+			<result column="hosting_date" property="hostingDate"/>
+			<result column="hosting_desc" property="hostingDesc"/>
+			<result column="hosting_image" property="hostingImage"/>
+			<result column="hosting_category" property="hostingCategory"/>
+			<result column="hosting_state" property="hostingState"/>
+			<result column="hosting_price" property="hostingPrice"/>
+			<result column="hosting_private" property="hostingPrivate"/>
+			<result column="hosting_room" property="hostingRoom"/>
+			<result column="hosting_person" property="hostingPerson"/>
+			<result column="hosting_bathroom" property="hostingBathroom"/>
+			<result column="hosting_bed" property="hostingBed"/>
+			<result column="hosting_amenities" property="hostingAmenities"/>
+			<result column="hosting_safety" property="hostingSafety"/>
+			<result column="hosting_facilities" property="hostingFacilities"/>
+			<result column="hosting_rule" property="hostingRule"/>
+			<result column="hosting_rule_detail" property="hostingRuleDetail"/>
+			<result column="hosting_latitude" property="hostingLatitude"/>
+			<result column="hosting_longitude" property="hostingLongitude"/>
+			<result column="hosting_view_count" property="hostingViewCount"/>
+			<result column="hosting_card_num" property="hostingCardNum"/>
+		</association>
+	</resultMap>
+	
+	<!-- 호스팅 디테일 페이지 출력을 위한 Mapper -->
+	<resultMap type="MainHostingDetail" id="MainHostingDetailMap">
+		<association property="member" javaType="Member">
+			<id column="member_no" property="memberNo"/>
+			<result column="member_email" property="memberEmail"/>
+			<result column="member_password" property="memberPassword"/>
+			<result column="member_name" property="memberName"/>
+			<result column="member_birthday" property="memberBirthday"/>
+			<result column="member_phone" property="memberPhone"/>
+			<result column="member_mailing" property="memberMailing"/>
+			<result column="member_last_login" property="memberLastLogin"/>
+			<result column="member_join_date" property="memberJoinDate"/>
+			<result column="member_state" property="memberState"/>
+			<result column="member_image" property="memberImage"/>
+			<result column="member_profile" property="memberProfile"/>
+			<result column="member_forbiddenDate" property="memberForbiddenDate"/>
+			<result column="member_sex" property="memberSex"/>
+			<result column="member_address" property="memberAddress"/>
+			<result column="member_memo" property="memberMemo"/>
+			<result column="member_host_state" property="memberHostState"/>
+		</association>
+		<association property="hosting">
+			<id column="hosting_no" property="hostingNo"/>
+			<result column="hosting_member_no" property="hostingMemberNo"/>
+			<result column="hosting_address" property="hostingAddress"/>
+			<result column="hosting_name" property="hostingName"/>
+			<result column="hosting_date" property="hostingDate"/>
+			<result column="hosting_desc" property="hostingDesc"/>
+			<result column="hosting_image" property="hostingImage"/>
+			<result column="hosting_category" property="hostingCategory"/>
+			<result column="hosting_state" property="hostingState"/>
+			<result column="hosting_price" property="hostingPrice"/>
+			<result column="hosting_private" property="hostingPrivate"/>
+			<result column="hosting_room" property="hostingRoom"/>
+			<result column="hosting_person" property="hostingPerson"/>
+			<result column="hosting_bathroom" property="hostingBathroom"/>
+			<result column="hosting_bed" property="hostingBed"/>
+			<result column="hosting_amenities" property="hostingAmenities"/>
+			<result column="hosting_safety" property="hostingSafety"/>
+			<result column="hosting_facilities" property="hostingFacilities"/>
+			<result column="hosting_rule" property="hostingRule"/>
+			<result column="hosting_rule_detail" property="hostingRuleDetail"/>
+			<result column="hosting_latitude" property="hostingLatitude"/>
+			<result column="hosting_longitude" property="hostingLongitude"/>
+			<result column="hosting_view_count" property="hostingViewCount"/>
+			<result column="hosting_card_num" property="hostingCardNum"/>
+		</association>
+	</resultMap>
+	
+	<!-- 메인 페이지 최근 4개 검색 -->
+	<select id="HostingSearchIndexLately" resultMap="MainHostingSearchMap">
+		select rownum, hosting_table.* from 
+    	(select hosting_no, hosting_image, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_view_count, hosting_latitude, hosting_longitude, avg(review_star) review_star_avg, count(review_no) review_no_count
+    	from hosting left join review on hosting_no=review_hosting_no where hosting_state=1
+    	group by hosting_no, hosting_image, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_view_count, hosting_latitude, hosting_longitude order by hosting_date desc) 
+    	hosting_table where rownum between 1 and 4
+	</select>
+	
+	<!-- 메인 페이지 지역 유명 4개 검색 -->
+	<select id="HostingSearchFamous" resultMap="MainHostingSearchMap">
+		select rownum, hosting_table.* from 
+	    (select hosting_no, hosting_image, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_view_count, hosting_latitude, hosting_longitude, avg(review_star) review_star_avg, count(review_no) review_no_count
+	    from hosting left join review on hosting_no=review_hosting_no where hosting_state=1
+	    group by hosting_no, hosting_image, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_view_count, hosting_latitude, hosting_longitude order by review_star_avg desc nulls last, review_no_count desc nulls last) 
+	    hosting_table where rownum between 1 and 4 and hosting_address like '%'||'서울'||'%'
+	</select>
+	
+	<!-- 메인 유명한 호스트 6개 출력 -->
+	<select id="HostingSearchSuperhost" resultMap="MainHostingSearchMap">
+		select rownum, hosting_table.* from 
+    	(select hosting_no, hosting_image, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_view_count, hosting_latitude, hosting_longitude, avg(review_star) review_star_avg, count(review_no) review_no_count
+    	from hosting left join review on hosting_no=review_hosting_no where hosting_state=1
+    	group by hosting_no, hosting_image, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_view_count, hosting_latitude, hosting_longitude order by review_star_avg desc nulls last, review_no_count desc nulls last) 
+    	hosting_table where rownum between 1 and 6
+	</select>
+	
+	<!-- index 페이지 갯수 카운팅 -->
+	<select id="HostingSearchCounting" resultType="MainHostingSearchCounting">
+		SELECT
+		    (SELECT COUNT(*) FROM hosting) total_count,
+		    (SELECT COUNT(*) FROM hosting WHERE  hosting_address like '%'||'서울'||'%') local_count
+		FROM DUAL
+	</select>
+	
+	<!-- Detail 페이지 출력을 위한 셀렉트 -->
+	<select id="selectMainHostingDetail" resultMap="MainHostingDetailMap">
+		select * from hosting join member on hosting_member_no=member_no where hosting_no=#{hostingNo}
+	</select>
+	
+	<select id="selectReview" resultType="Review">
+		select * from review
+	</select>
+	
+	<select id="selectReviewNo" resultType="Review">
+		select * from review where review_no=#{review_no} 
+	</select>
+	
+	<select id="selectMainHostingList" resultMap="MainHostingSearchMap">
+		select rownum, hosting_table.* 
+		from (select hosting_no, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_person, hosting_private, hosting_bed, hosting_room, hosting_bathroom, hosting_rule, hosting_amenities, hosting_facilities, hosting_safety, hosting_latitude, hosting_longitude, hosting_view_count, member_host_state, hosting_state, hosting_image, avg(review_star)review_star_avg from hosting left join review on hosting_no=review_hosting_no left join member on hosting_member_no=member_no 
+		group by hosting_no, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_person, hosting_private, hosting_bed, hosting_room, hosting_bathroom, hosting_rule, hosting_amenities, hosting_facilities, hosting_safety, hosting_latitude, hosting_longitude, hosting_view_count, member_host_state, hosting_state, hosting_image order by hosting_date desc) hosting_table 
+		where rownum between #{startRow} and #{endRow} and hosting_state = 1 and hosting_address like '%'||#{hostAddress}||'%'
+	</select>
+	
+	<!-- 디테일 검색 
+	<select id="selectMainHostingList" resultMap="MainHostingSearchMap">
+		select rownum, hosting_table.* 
+		from (select hosting_no, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_person, hosting_private, hosting_bed, hosting_room, hosting_bathroom, hosting_rule, hosting_amenities, hosting_facilities, hosting_safety, hosting_latitude, hosting_longitude, hosting_view_count, member_host_state, hosting_state, avg(review_star)review_star_avg from hosting left join review on hosting_no=review_hosting_no left join member on hosting_member_no=member_no 
+		group by hosting_no, hosting_date, hosting_name, hosting_desc, hosting_price, hosting_category, hosting_address, hosting_person, hosting_private, hosting_bed, hosting_room, hosting_bathroom, hosting_rule, hosting_amenities, hosting_facilities, hosting_safety, hosting_latitude, hosting_longitude, hosting_view_count, member_host_state, hosting_state order by hosting_date desc) hosting_table 
+		<where>
+			rownum between #{startRow} and #{endRow} and hosting_state = 1
+			<trim prefix="and (" prefixOverrides="and | or" suffix=")">			
+				<if test="hostingAddress != null or hostingAddress != ''">
+					hosting_address like '%'||#{hostingAddress}||'%'
+				</if>
+				<if test="hostingName != null or hostingName != ''">
+					or hosting_name like '%'||#{hostingName}||'%'
+				</if>
+			</trim>
+		<if test="hostingPerson != null or hostingPerson != ''">
+			and hosting_person >= #{hostingPerson}
+		</if>
+		<if test="hostingPriceMin != null or hostingPriceMin != ''">
+			and hosting_price >= #{hostingPriceMin} 
+		</if>
+		<if test="hostingPriceMax != null or hostingPriceMax != ''">
+			and #{hostingPriceMax} >= hosting_price
+		</if>
+		<if test="starAvgFive != null or starAvgFive != ''">
+			and review_star_avg >= 8
+		</if>
+		<if test="starAvgFour != null or starAvgFour != ''">
+			and review_star_avg >= 6
+		</if>
+		<if test="starAvgThree != null or starAvgThree != ''">
+			and review_star_avg >= 4
+		</if>
+			<trim prefix="and (" prefixOverrides="and | or" suffix=")">
+				<if test="categoryFour != null or categoryFour != ''">
+					hosting_category=4
+				</if>
+				<if test="categoryThree != null or categoryThree != ''">
+					or hosting_category=3
+				</if>
+				<if test="categoryTwo != null or categoryTwo != ''">
+					or hosting_category=2
+				</if>
+				<if test="categoryOne != null or categoryOne != ''">
+					 or hosting_category=1
+				</if>
+			</trim>
+		<if test="hostingPrivate != null or hostingPrivate != ''">
+			and hosting_private=#{hostingPrivate}
+		</if>
+		<if test="hostingBed != null or hostingBed != ''">
+			and hosting_bed >=#{hostingBed}
+		</if>
+		<if test="hostingRoom != null or hostingRoom != ''">
+			and hosting_room >=#{hostingRoom}
+		</if>
+		<if test="hostingBathroom != null or hostingBathroom != ''">
+			and hosting_bathroom >= #{hostingBathroom}
+		</if>
+		<if test="hostingRule != null or hostingRule != ''">
+			and hosting_rule like '%'||#{hostingRule}||'%'
+		</if>
+		<if test="hostingAmenities != null or hostingAmenities != ''">
+			and hosting_amenities like '%'||#{hostingAmenities}||'%'
+		</if>
+		<if test="hostingFacilities != null or hostingFacilities != ''">
+			and hosting_facilities like '%'||#{hostingFacilities}||'%'
+		</if>
+		<if test="hostingSafety != null or hostingSafety != ''">
+			and hosting_safety like '%'||#{hostingSafety}||'%'
+		</if>
+		</where>
+	</select>
+	-->
+</mapper>

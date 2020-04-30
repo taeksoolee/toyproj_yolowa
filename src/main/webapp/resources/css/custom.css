@@ -1,0 +1,88 @@
+/*============================================================================================*/
+/* Your custom styles below */
+/*============================================================================================*/
+/*메인 이미지*/
+.hero_single.version_3:before {
+    background: url(/yolowa/img/test.jpg) center center no-repeat;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+/*메인 숙소상단 아이콘*/
+.icon_clock_alt:before {
+    content: "\e009";
+}
+
+/*헤더 폰트아이콘 수정*/
+ul#top_menu li a.cart-menu-btn:before {
+    content: '\e807';
+}
+
+ul#top_menu li a.login:before {
+    content: '\e87b';
+}
+
+ul#top_menu li a.wishlist_bt_top:before {
+    content: '\e80a';
+}
+
+ul#top_menu li a.login:before, ul#top_menu li a.wishlist_bt_top:before, ul#top_menu li a.cart-menu-btn:before {
+    font-family: fontello;
+    font-size: 21px;
+    font-size: 1.3125rem;
+    color: #fff;
+    text-indent: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: normal;
+    line-height: 1;
+}
+
+ul#top_menu li a.cart-menu-btn2:before {
+    content: '\e85d';
+}
+
+ul#top_menu li a.logout:before {
+    content: '\e87c';
+}
+
+/* 디테일 페이지 변경 */
+ul.hotel_facilities {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    -webkit-column-count: 2;
+    -moz-column-count: 2;
+    column-count: 3;
+}
+
+.social_twitter:before {
+    content: "\77";
+}
+
+.social_googleplus:before {
+    content: "\4e";
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    float: left;
+    min-width: 23rem;
+    padding: .5rem 0;
+    margin: .125rem 0 0;
+    font-size: 1rem;
+    color: #212529;
+    text-align: left;
+    list-style: none;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: .25rem;
+}

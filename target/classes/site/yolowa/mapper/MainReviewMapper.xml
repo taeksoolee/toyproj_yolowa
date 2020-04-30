@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainReviewMapper">
+	
+	<!-- 메인 디테일 페이지 출력을 위한 resultMap -->
+	<resultMap type="MainReview" id="MainReviewMap">
+		<result column="rn" property="rn"/>
+		<result column="writer_No" property="writerNo"/>
+		<result column="writer_Name" property="writerName"/>
+		<result column="writer_Image" property="writerImage"/>
+		<association property="review" javaType="Review">
+			<id column="review_No" property="reviewNo"/>
+			<result column="review_Ref" property="reviewRef"/>
+			<result column="review_Hosting_No" property="reviewHostingNo"/>
+			<result column="review_Member_No" property="reviewMemberNo"/>
+			<result column="review_Board_No" property="reviewBoardNo"/>
+			<result column="review_Writer_No" property="reviewWriterNo"/>
+			<result column="review_Content" property="reviewContent"/>
+			<result column="review_Star" property="reviewStar"/>
+			<result column="review_Date" property="reviewDate"/>
+			<result column="review_State" property="reviewState"/>
+			<result column="review_Category" property="reviewCategory"/>
+		</association>
+	</resultMap>
+	
+	<!-- 메인 디테일 페이지 호스트 리뷰 입력 -->
+	<insert id="insertReviewDtail">
+		<selectKey resultType="int" keyProperty="reviewNo" order="BEFORE">
+			select review_seq.nextval from dual
+		</selectKey>
+		insert into review values(#{reviewNo}, #{reviewNo}, #{reviewHostingNo}, null, null, #{reviewWriterNo}, #{reviewContent}, #{reviewStar}, sysdate, 1, 2)
+	</insert>
+	
+	<!-- 마이페이지 호스트 -> 게스트 입력 -->
+	<insert id="insertReviewGuest">
+		<selectKey resultType="int" keyProperty="reviewNo" order="BEFORE">
+			select review_seq.nextval from dual
+		</selectKey>
+		insert into review values(#{reviewNo}, #{reviewNo}, null, #{reviewMemberNo}, null, #{reviewWriterNo}, #{reviewContent}, null, sysdate, 1, 1)
+	</insert>
+	
+	<!-- 페이징 처리된 리뷰 셀렉트(디테일 리뷰) -->
+	<select id="selectReviewDetailList" resultMap="MainReviewMap">
+		select * from (select rownum rn, review_table.* from
+		(select distinct review.*, writer_no, writer_name, writer_image from hosting join review on hosting_no=review_hosting_no join 
+		(select member_no writer_no, member_name writer_name, member_image writer_image from review join member on review_writer_no=member_no) on writer_no = review_writer_no  
+		where hosting_no=#{hostingNo} order by review_ref desc, review_no asc)review_table) where rn between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 디테일 페이지 별점 평균 -->
+	<select id="selectReviewStarCount" resultType="MainReviewStarCount">
+		select count(review_star)star_Total, avg(review_star)star_Avg,count(decode(review_star, 1, 1, 2, 1))star_One, count(decode(review_star, 3, 2, 4, 2))star_Two, count(decode(review_star, 5, 3, 6, 3))star_Three, count(decode(review_star, 7, 4, 8, 4))star_Four, count(decode(review_star, 9, 5, 10, 5))star_Five
+		from review join hosting on review_hosting_no=hosting_no where hosting_no=#{hostingNo}
+	</select>
+	
+	<!-- 페이징 처리된 마이페이지를 위한 카운트 -->
+	<select id="selectReviewGuestCount" resultType="int">
+		select count(review_no) from review join member on review_writer_no=member_no where review_member_no=#{review_member_no} and review_category=1 and review_state=1
+	</select>
+	
+	<!-- 페이징 처리된 마이페이지 게스트 리뷰 -->
+	<select id="selectReviewGuestList" resultMap="MainReviewMap">
+		select * from 
+		(select rownum rn, guestreview.* from 
+		(select member_no writer_no, member_name writer_name, member_image writer_image, review.* from review 
+		join member on review_writer_no=member_no where review_member_no=#{reviewMemberNo} and review_category=1 and review_state=1 order by review_ref desc, review_no asc )guestreview) 
+		where rn between #{startRow} and #{endRow}
+	</select>
+	
+	<!-- 게스트 리뷰 페이지 출력을 위한 멤버 셀렉트 -->
+	<select id="selectMypageMember" resultType="Member">
+		select * from member where member_no=#{memberNo}
+	</select>
+	
+	<!-- 마이페이지 리리플 -->
+	<insert id="insertReviewReGuest">
+		<selectKey resultType="int" keyProperty="reviewNo" order="BEFORE">
+			select review_seq.nextval from dual
+		</selectKey>
+		insert into review values(#{reviewNo}, #{reviewRef}, null, #{reviewMemberNo}, null, #{reviewWriterNo}, #{reviewContent}, null, sysdate, 1, 1)
+	</insert>
+	
+</mapper>

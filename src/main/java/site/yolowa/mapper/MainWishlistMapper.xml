@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainWishlistMapper">
+	
+	
+	<!-- 호스팅 상세페이지에서 위시리스트 추가 -->
+	<insert id="insertWishlist">
+		insert into wishlist values(#{member_no}, #{hosting_no}, sysdate)
+	</insert>
+	
+	<!-- 위시리스트 메인 페이지에서 위시리스트 삭제 -->
+	<delete id="deleteWishlist">
+		delete from wishlist where wishlist_member_no= #{member_no} and wishlist_hosting_no=#{hosting_no}
+	</delete>
+	
+		
+	<!-- 등록한 위시리스트 목록을 위시리스트 메인 페이지에 출력 -->
+	<select id="selectMainWishlist" resultType="HashMap">
+		select h.*, mr.member_image, mr.member_name, mr.member_host_state, round((select avg(r.review_star) from 
+		review r where r.review_hosting_no = h.hosting_no),1) avg, (select count(*) from review r where r.review_hosting_no = h.hosting_no) ctn from 
+		hosting h inner join (select * from member m inner join (select * from wishlist w where w.wishlist_member_no = #{memberNo}) wr on m.member_no = wr.wishlist_member_no) mr on h.hosting_no = mr.wishlist_hosting_no
+	</select>
+	
+	<!-- 위시리스트 단일 저장 -->
+	<select id="selectMainWishlistSave" resultType="Wishlist">
+		select * from wishlist where wishlist_member_no=#{wishlistMemberNo} and wishlist_hosting_no=#{wishlistHostingNo}
+	</select>
+	
+</mapper>

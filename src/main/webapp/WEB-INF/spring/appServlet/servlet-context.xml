@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<annotation-driven />
+
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+	<resources mapping="/assets/**" location="/resources/assets/"/>
+	<resources mapping="/css/**" location="/resources/css/"/>
+	<resources mapping="/img/**" location="/resources/img/"/>
+	<resources mapping="/js/**" location="/resources/js/"/>
+	<resources mapping="/editor/**" location="/resources/js/editor/"/>
+	<resources mapping="/layerslider/**" location="/resources/layerslider/"/>
+	<resources mapping="/vendor/**" location="/resources/vendor/"/>
+	<resources mapping="/video/**" location="/resources/video/"/>
+	<resources mapping="/resources/**" location="/resources/"/>
+	
+
+	
+	<beans:bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+		<beans:property name="order" value="1" />
+	</beans:bean>
+	
+	<beans:bean class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<beans:property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView"/>
+		<beans:property name="order" value="2"/>
+	</beans:bean>
+	
+	<beans:bean class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+		<beans:property name="definitions">
+			<beans:list>
+				<beans:value>/WEB-INF/spring/appServlet/tiles.xml</beans:value>
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+		<beans:property name="order" value="3"/>
+	</beans:bean>
+<!-- admin -->	
+	<!-- dateFormat을 지원하기 위한 스프링 빈 생성-->
+	<beans:bean class="java.text.SimpleDateFormat" id="underBarDateFormat">
+		<beans:constructor-arg name="pattern" value="yyyy-MM-dd"/>
+	</beans:bean>
+	<beans:bean class="java.text.SimpleDateFormat" id="AdminTableNowDateFormat">
+		<beans:constructor-arg name="pattern" value="yyyy년 MM월 dd일 hh:mm:ss"/>
+	</beans:bean>
+	<beans:bean class="java.text.SimpleDateFormat" id="slashDateFormat">
+		<beans:constructor-arg name="pattern" value="yy/MM/dd"/>
+	</beans:bean>
+	<beans:bean class="java.text.SimpleDateFormat" id="slashYearMonthFormat">
+		<beans:constructor-arg name="pattern" value="yy/MM"/>
+	</beans:bean>
+	<beans:bean class="java.text.SimpleDateFormat" id="nomalDateFormat">
+		<beans:constructor-arg name="pattern" value="yy/MM/dd hh:mm:ss"/>
+	</beans:bean>
+	
+	<!-- json parsing을 위한 객체 -->
+	<beans:bean class="com.fasterxml.jackson.databind.ObjectMapper" id="jacksonMapper" />
+	
+	<!-- visited site -->
+	<beans:bean class="java.lang.String" id="visitedsitePath">
+		<beans:constructor-arg value="WEB-INF/spring/visited-site.properties" />
+	</beans:bean>
+	<beans:bean class="java.util.Properties" id="visitedsiteProp" />
+	
+	<!-- sns site -->
+	<beans:bean class="java.lang.String" id="snsPath">
+		<beans:constructor-arg value="WEB-INF/spring/sns.properties" />
+	</beans:bean>
+	<beans:bean class="java.util.Properties" id="snsProp" />
+	
+	<!-- 인터셉터 클래스를 Spring Bean으로 등록 -->
+	<beans:bean class="site.yolowa.utils.AdminAuthInterceptor" id="adminAuthInterceptor"/>
+	<beans:bean class="site.yolowa.utils.MainSnsInterceptor" id="mainSnsInterceptor" />
+	<!-- 관리자외의 사용자를 차단하는 인터셉트 -->
+	 
+	<interceptors>
+		<interceptor>
+			<mapping path="/admin/**"/>
+			<beans:ref bean="adminAuthInterceptor"/>
+		</interceptor>
+	
+		<interceptor>
+			<mapping path="/*" />
+			<beans:ref bean="mainSnsInterceptor"/>
+		</interceptor>
+	</interceptors>
+	
+	<beans:bean id="beforeAdvisor" class="site.yolowa.aop.BeforeAdvisor" />
+	<aop:config>
+		<aop:aspect ref="beforeAdvisor">
+			<aop:before method="updateVisitedPage" pointcut="within(site.yolowa.controller.*)"/>
+		</aop:aspect>
+	</aop:config>
+	
+<!-- /admin -->
+	
+<!-- main 수수료를 정하기 위한 프로퍼티 파일 -->
+	<beans:bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="multipartResolver">
+		<!-- 이미지 파일 사이즈 설정 -->
+		<beans:property value="20971520" name="maxUploadSize"/>
+		<beans:property value="UTF-8" name="defaultEncoding"/>
+	</beans:bean>
+	
+<!-- /main  -->	
+	<tx:annotation-driven/>
+	<context:component-scan base-package="site.yolowa.controller"/>
+	<context:component-scan base-package="site.yolowa.dao"/>
+	<context:component-scan base-package="site.yolowa.service"/>
+	<context:component-scan base-package="site.yolowa.utils"/>	
+	
+	
+</beans:beans>

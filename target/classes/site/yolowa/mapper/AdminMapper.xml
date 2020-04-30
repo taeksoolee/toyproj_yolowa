@@ -1,0 +1,1050 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.AdminMapper">
+	<select id="selectAllMember" resultType="Member">
+		select * from member
+	</select>
+	
+	<!-- select member table Map-->
+	<resultMap type="AdminMemberTable" id="adminMemberTable">
+		<id column="member_no" property="memberNo"/>
+		<result column="hosting_count" property="hostingCount"/>
+		<result column="reservation_total_price" property="reservationTotalPrice"/>
+		<result column="reservation_count" property="reservationCount"/>
+		<association property="member" javaType="Member">
+			<id column="member_no" property="memberNo"/>
+			<result column="member_email" property="memberEmail"/>
+			<result column="member_password" property="memberPassword"/>
+			<result column="member_name" property="memberName"/>
+			<result column="member_birthday" property="memberBirthday"/>
+			<result column="member_phone" property="memberPhone"/>
+			<result column="member_mailing" property="memberMailing"/>
+			<result column="member_last_login" property="memberLastLogin"/>
+			<result column="member_join_date" property="memberJoinDate"/>
+			<result column="member_state" property="memberState"/>
+			<result column="member_image" property="memberImage"/>
+			<result column="member_profile" property="memberProfile"/>
+			<result column="member_forbidden_date" property="memberForbiddenDate"/>
+			<result column="member_sex" property="memberSex"/>
+			<result column="member_address" property="memberAddress"/>
+			<result column="member_memo" property="memberMemo"/>
+			<result column="member_host_state" property="memberHostState"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectAdminMemberTable" resultMap="adminMemberTable">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select member_table.* from (select member.*, hosting_count, reservation_total_price reservation_total_price, reservation_count from member left join (select hosting_member_no, count(*) hosting_count from hosting group by hosting_member_no) on member_no=hosting_member_no left join (select reservation_member_no, count(*) reservation_count, sum(reservation_total_price) reservation_total_price from reservation group by reservation_member_no) on member_no=reservation_member_no where member_state<>0
+			order by member_no desc) member_table where rownum <= ]]> #{count}
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select member_table.* from (select member.*, hosting_count, reservation_total_price reservation_total_price, reservation_count from member left join (select hosting_member_no, count(*) hosting_count from hosting group by hosting_member_no) on member_no=hosting_member_no left join (select reservation_member_no, count(*) reservation_count, sum(reservation_total_price) reservation_total_price from reservation group by reservation_member_no) on member_no=reservation_member_no where member_state<>0 ]]>
+			<trim prefix="and" suffixOverrides="and|or">
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="birthdays!=null or lastLogins!=null or joinDates!=null">
+					<foreach collection="birthdays" item="birthday">
+						member_birthday between #{birthday.start} and to_date(#{birthday.end})+1 or 
+					</foreach>
+					<foreach collection="lastLogins" item="lastLogin">
+						member_last_login between #{lastLogin.start} and to_date(#{lastLogin.end})+1 or 
+					</foreach>
+					<foreach collection="joinDates" item="joinDate">
+						member_join_date between #{joinDate.start} and to_date(#{joinDate.end})+1 or
+					</foreach>
+				</if>
+				</trim>
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="nos!=null or names!=null or emails!=null or phones!=null or addresses!=null">
+					<foreach collection="nos" item="no">
+						member_no = #{no} or			
+					</foreach>
+					<foreach collection="names" item="name">
+						member_name like '%'||#{name}||'%' or			
+					</foreach>
+					<foreach collection="emails" item="email">
+						member_email like '%'||#{email}||'%' or			
+					</foreach>
+					<foreach collection="phones" item="phone">
+						member_phone like '%'||#{phone}||'%' or			
+					</foreach>
+					<foreach collection="addresses" item="address">
+						member_address like '%'||#{address}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and" >
+				<if test="hostStates!=null">
+					<!-- 들어온 정보가 없을 경우 데이터를 안보냄 -->
+					<if test="hostStates.size == 0">
+						1=0
+					</if>
+					<foreach collection="hostStates" item="hostState">
+						member_host_state=#{hostState} or
+					</foreach>
+				</if>
+				</trim>
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and" >
+				<if test="states!=null">
+					<!-- 들어온 정보가 없을 경우 데이터를 안보냄 -->
+					<if test="states.size == 0">
+						1=0
+					</if>
+					<foreach collection="states" item="state">
+						member_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=")">
+				<if test="totalPriceStart!=null or totalPriceEnd!=null">
+					<if test="totalPriceStart==0">
+						reservation_total_price is null or
+					</if>
+					<![CDATA[reservation_total_price between]]> #{totalPriceStart} and #{totalPriceEnd}
+				</if> 
+			</trim>
+			</trim>
+			<![CDATA[order by member_no desc) member_table where rownum <= ]]> #{count}	
+		</when>
+		</choose>
+	</select>
+	
+	<resultMap type="AdminHostingTable" id="adminHostingTable">
+		<result column="used_count" property="usedCount"/>
+		<result column="reservation_count" property="reservationCount"/>
+		<association property="hosting" javaType="Hosting">
+			<id column="hosting_no" property="hostingNo"/>
+			<result column="hosting_member_no" property="hostingMemberNo"/>
+			<result column="hosting_address" property="hostingAddress"/>
+			<result column="hosting_name" property="hostingName"/>
+			<result column="hosting_date" property="hostingDate"/>
+			<result column="hosting_desc" property="hostingDesc"/>
+			<result column="hosting_image" property="hostingImage"/>
+			<result column="hosting_category" property="hostingCategory"/>
+			<result column="hosting_state" property="hostingState"/>
+			<result column="hosting_price" property="hostingPrice"/>
+			<result column="hosting_private" property="hostingPrivate"/>
+			<result column="hosting_room" property="hostingRoom"/>
+			<result column="hosting_person" property="hostingPerson"/>
+			<result column="hosting_bathroom" property="hostingBathroom"/>
+			<result column="hosting_bed" property="hostingBed"/>
+			<result column="hosting_amenities" property="hostingAmenities"/>
+			<result column="hosting_safety" property="hostingSafety"/>
+			<result column="hosting_facilities" property="hostingFacilities"/>
+			<result column="hosting_rule" property="hostingRule"/>
+			<result column="hosting_rule_detail" property="hostingRuleDetail"/>
+			<result column="hosting_latitude" property="hostingLatitude"/>
+			<result column="hosting_longitude" property="hostingLongitude"/>
+			<result column="hosting_view_count" property="hostingViewCount"/>
+			<result column="hosting_card_num" property="hostingCardNum"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectAdminHostingTable" resultMap="adminHostingTable">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select hosting_table.* from (select hosting.*, used_count, reservation_count from hosting hosting 
+				left join (select reservation_hosting_no reservated_hosting_no, count(*) used_count from reservation where reservation_check_out between sysdate and '9999-12-31' group by reservation_hosting_no) on hosting_no=reservated_hosting_no 
+				left join (select reservation_hosting_no reservating_hosting_no, count(*) reservation_count from reservation where reservation_check_out between '0001-01-01' and sysdate group by reservation_hosting_no) on hosting_no=reservating_hosting_no
+				where hosting_state<>0 order by hosting_no desc) hosting_table where rownum<=]]>#{count}
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select hosting_table.* from (select hosting.*, used_count, reservation_count from hosting hosting 
+				left join (select reservation_hosting_no reservated_hosting_no, count(*) used_count from reservation where reservation_check_out between sysdate and '9999-12-31' group by reservation_hosting_no) on hosting_no=reservated_hosting_no 
+				left join (select reservation_hosting_no reservating_hosting_no, count(*) reservation_count from reservation where reservation_check_out between '0001-01-01' and sysdate group by reservation_hosting_no) on hosting_no=reservating_hosting_no
+				where hosting_state<>0 ]]> 
+			
+			<trim prefix="and" suffixOverrides="and|or">
+			<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<!-- 범위 검색에 대한 동적 sql -->
+				<if test="hostingDates!=null">
+					<foreach collection="hostingDates" item="hostingDate">
+						hosting_date between #{hostingDate.start} and to_date(#{hostingDate.end})+1 or 
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="nos!=null or names!=null or memberNos!=null">
+					<foreach collection="nos" item="no">
+						hosting_no = #{no} or			
+					</foreach>
+					<foreach collection="names" item="name">
+						hosting_name like '%'||#{name}||'%' or			
+					</foreach>
+					<foreach collection="memberNos" item="memberNo">
+						hosting_member_no like '%'||#{memberNo}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="states!=null">
+					<if test="states.size == 0">
+						1=0
+					</if>
+					<foreach collection="states" item="state">
+						hosting_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+				<trim prefix="(" suffix=") and">
+				<if test="usedCountStart!=null or usedCountEnd!=null">
+					<if test="usedCountStart==0">
+						used_count is null or
+					</if>
+					<![CDATA[used_count between ]]>#{usedCountStart} and #{usedCountEnd}
+				</if> 
+				</trim>
+				<trim prefix="(" suffix=") and">
+				<if test="ReservationCountStart!=null or ReservationCountEnd!=null">
+					<if test="ReservationCountStart==0">
+						reservation_count is null or
+					</if>
+					<![CDATA[reservation_total_price between]]>#{ReservationCountStart} and #{ReservationCountEnd}
+				</if> 
+				</trim>
+			</trim>
+			<![CDATA[order by hosting_no desc) hosting_table where rownum<=]]>#{count}
+		</when>
+		</choose>
+	</select>
+	
+	<select id="selectAdminMessageTable" resultType="Message">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select message_table.* from (select * from message where message_state<>1 and message_state<>2 
+			order by message_no desc) message_table where rownum<=]]>#{count}
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select message_table.* from (select * from message where message_state<>1 and message_state<>2]]>
+			<trim prefix="and" suffixOverrides="and|or">
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="messageDates!=null">
+					<foreach collection="messageDates" item="messageDate">
+						message_date between #{messageDate.start} and #{messageDate.end} or 
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="contents!=null or senderNos!=null or receiverNos!=null">
+					<foreach collection="contents" item="content">
+						message_content like '%'||#{content}||'%' or			
+					</foreach>
+					<foreach collection="senderNos" item="senderNo">
+						message_sender_no like '%'||#{senderNo}||'%' or		
+					</foreach>
+					<foreach collection="receiverNos" item="receiverNo">
+						message_receiver_no like '%'||#{receiverNo}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="states!=null">
+					<if test="states.size == 0">
+						1=0
+					</if>
+					<foreach collection="states" item="state">
+						message_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=")" suffixOverrides="or|and">
+					<if test="selects!=null">
+						<if test="selects.size == 0">
+							1=0
+						</if>
+						<foreach collection="selects" item="select">
+						<!-- 1: 모든회원, 2: 선택회원 -->
+						<choose>
+							<when test="select==1">
+								message_receiver_no is null or
+							</when>
+							<when test="select==2">
+								message_receiver_no is not null or
+							</when>
+						</choose>
+						</foreach>			
+					</if>
+				</trim>
+			</trim>
+			<![CDATA[order by message_no desc) message_table where rownum<=]]>#{count}
+		</when>
+		</choose>
+	</select>
+	
+	<insert id="insertAdminMessage">
+		<selectKey resultType="int" keyProperty="messageNo" order="BEFORE">
+			select message_seq.nextval from dual
+		</selectKey>
+		insert into message values (#{messageNo}, #{messageSenderNo}, 
+		
+		<choose>
+			<when test="messageReceiverNo == 0">
+				null,
+			</when>
+			<when test="messageReceiverNo != 0">
+				#{messageReceiverNo},
+			</when>
+		</choose>
+		 #{messageContent} <![CDATA[, sysdate, 3)]]>
+	</insert>
+	
+	<update id="updateAdminMessageState">
+		update message set message_state=4 where message_no=#{messageNo}
+	</update>
+	
+	<select id="selectAdminClaimUserTable" resultType="Claim">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select claim_table.* from(select * from claim where (claim_type=1 or claim_type=2) 
+			 order by claim_no desc) claim_table where rownum<=]]>#{count}
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select claim_table.* from(select * from claim where (claim_type=1 or claim_type=2)]]>
+			<trim prefix="and" suffixOverrides="and|or">
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<!-- 범위 검색에 대한 동적 sql -->
+				<if test="claimDates!=null">
+					<foreach collection="claimDates" item="claimDate">
+						claim_date between #{claimDate.start} and #{claimDate.end} or 
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="reasons!=null or applicantNos!=null or suspectNos!=null or suspectHostingNos!=null">
+					<foreach collection="reasons" item="reason">
+						claim_reason like '%'||#{reason}||'%' or			
+					</foreach>
+					<foreach collection="applicantNos" item="applicantNo">
+						claim_applicant_no like '%'||#{applicantNo}||'%' or		
+					</foreach>
+					<foreach collection="suspectNos" item="suspectNo">
+						claim_suspect_no like '%'||#{suspectNo}||'%' or			
+					</foreach>
+					<foreach collection="suspectHostingNos" item="suspectHostingNo">
+						claim_suspect_hosting_no like '%'||#{suspectHostingNo}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="types!=null">
+					<foreach collection="types" item="type">
+						claim_type=#{type} or
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="states!=null">
+					<foreach collection="states" item="state">
+						claim_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+			</trim>
+			<![CDATA[order by claim_no desc) claim_table where rownum<=]]>#{count}
+		</when>
+		</choose>
+	</select>
+	
+	<select id="selectNoMember" resultType="Member">
+		select * from member where member_no=#{memberNo}
+	</select>
+	
+	<update id="updateMemberForbiddenDate">
+		update member set member_forbidden_date=#{memberForbiddenDate}
+		<if test="memberForbiddenDate != null">
+		, member_state=2
+		</if> 
+		where member_no=#{memberNo}
+	</update>
+	<update id="updateMemberForbiddenDateReset">
+		update member set member_forbidden_date=null, member_state=1 where member_no=#{memberNo}
+	</update>
+	
+	<update id="updateClaimState">
+		update claim set claim_state=#{claimState} where claim_no=#{claimNo}
+		<!-- 
+			<trim prefix="where claim_no in(" suffix=")" suffixOverrides=",">
+			<if test="claimNos!=null and claimNos.size!=0">
+				<foreach collection="claimNos" item="no">
+					#{no},
+				</foreach>
+			</if>
+			</trim>
+		 --> 
+	</update>
+	
+	
+	<resultMap type="AdminClaimReview" id="adminClaimReview">
+		<association property="claim" javaType="Claim">
+			<id column="claim_no" property="claimNo"/>
+			<result column="claim_type" property="claimType"/>
+			<result column="claim_applicant_no" property="claimApplicantNo"/>
+			<result column="claim_suspect_no" property="claimSuspectNo"/>
+			<result column="claim_suspect_hosting_no" property="claimSuspectHostingNo"/>
+			<result column="claim_suspect_review_no" property="claimSuspectReviewNo"/>
+			<result column="claim_date" property="claimDate"/>
+			<result column="claim_reason" property="claimReason"/>
+			<result column="claim_state" property="claimState"/>
+		</association>
+		<association property="review" javaType="Review">
+			<id column="review_no" property="reviewNo"/>
+			<result column="review_ref" property="reviewRef"/>
+			<result column="review_hosting_no" property="reviewHostingNo"/>
+			<result column="review_member_no" property="reviewMemberNo"/>
+			<result column="review_board_no" property="reviewBoardNo"/>
+			<result column="review_writer_no" property="reviewWriterNo"/>
+			<result column="review_content" property="reviewContent"/>
+			<result column="review_star" property="reviewStar"/>
+			<result column="review_date" property="reviewDate"/>
+			<result column="review_state" property="reviewState"/>
+			<result column="review_category" property="reviewCategory"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectAdminClaimReviewTable" resultMap="adminClaimReview">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select claim_table.* from(select * from claim left join review on claim_suspect_review_no=review_no where claim_type=3 
+			order by claim_no desc) claim_table where rownum<=]]>#{count}
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select claim_table.* from(select * from claim left join review on claim_suspect_review_no=review_no where claim_type=3 ]]>
+			<trim prefix="and" suffixOverrides="and|or">
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<!-- 범위 검색에 대한 동적 sql -->
+				<if test="claimDates!=null">
+					<foreach collection="claimDates" item="claimDate">
+						claim_date between #{claimDate.start} and #{claimDate.end} or
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="reasons!=null or applicantNos!=null or suspectReviewNos!=null">
+					<foreach collection="reasons" item="reason">
+						review_content like '%'||#{reason}||'%' or			
+					</foreach>
+					<foreach collection="applicantNos" item="applicantNo">
+						claim_applicant_no like '%'||#{applicantNo}||'%' or		
+					</foreach>
+					<foreach collection="suspectReviewNos" item="suspectReviewNo">
+						claim_suspect_no like '%'||#{suspectReviewNo}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="states!=null">
+					<foreach collection="states" item="state">
+						claim_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+			</trim> 
+			<![CDATA[order by claim_no desc) claim_table where rownum<=]]>#{count}
+		</when>
+		</choose>
+	</select>
+	
+	<update id="updateReviewStateStop">
+		update review set review_state=0 where review_no=#{reviewNo}
+		<!-- 
+			<trim prefix="where review_no in(" suffix=")" suffixOverrides=",">
+			<if test="reviewNos!=null and reviewNos.size!=0">
+				<foreach collection="reviewNos" item="no">
+					#{no},
+				</foreach>
+			</if>
+			</trim>
+		 -->
+	</update>
+	<update id="updateReviewStatePost">
+		update review set review_state=1 where review_no=#{reviewNo}
+		<!-- 
+			<trim prefix="where review_no in(" suffix=")" suffixOverrides=",">
+			<if test="reviewNos!=null and reviewNos.size!=0">
+				<foreach collection="reviewNos" item="no">
+					#{no},
+				</foreach>
+			</if>
+			</trim>
+		 -->
+	</update>
+	
+	<select id="selectAdminSalesChart" resultType="AdminChart">
+		<![CDATA[select substr(reservation_date, 1, 5) month, sum(reservation_total_price) tatal_price_sum, count(*) count from reservation]]> 
+			<![CDATA[where substr(reservation_date, 1, 5) between ]]>#{start} and #{end}
+		<![CDATA[group by substr(reservation_date, 1, 5) order by month desc]]>
+	</select>
+	
+	<select id="selectAdminHostingChart" resultType="AdminChart">
+		<![CDATA[select substr(hosting_date, 1, 5) month, count(*) count from hosting]]> 
+			<![CDATA[where substr(hosting_date, 1, 5) between ]]>#{start} and #{end} 
+		<![CDATA[group by substr(hosting_date, 1, 5) order by month desc]]>
+	</select>
+	
+	<select id="selectAdminMemberJoinChart" resultType="AdminChart">
+		<![CDATA[select substr(member_join_date, 1, 5) month, count(*) count from member]]> 
+			<![CDATA[where substr(member_join_date, 1, 5) between ]]>#{start} and #{end} 
+		<![CDATA[group by substr(member_join_date, 1, 5) order by month desc]]>
+	</select>
+	
+	<select id="selectAdminClaimChart" resultType="AdminChart">
+		<![CDATA[select substr(claim_date, 1, 5) month, count(*) count from claim]]> 
+			<![CDATA[where substr(claim_date, 1, 5) between ]]>#{start} and #{end} 
+		<![CDATA[group by substr(claim_date, 1, 5) order by month desc]]>
+	</select>
+	
+	<select id="selectAdminJoinMemberCard" resultType="AdminCard">
+	<!-- member-join-date, count -->
+		<![CDATA[select substr(member_join_date, 1, 9) seperator, count(*) value from member 
+			where substr(member_join_date, 1, 9) between substr(sysdate-1, 1, 9) and substr(sysdate, 1, 9)
+		group by substr(member_join_date, 1, 9)]]>
+	</select>
+	
+	<select id="selectAdminStateMemberCard" resultType="AdminCard">
+	<!-- host-state, count -->
+		<![CDATA[select nvl2(hosting_count, 'host', 'guest') seperator, count(*) value from member 
+			left join (select hosting_member_no, count(*) hosting_count from hosting group by hosting_member_no) on member_no=hosting_member_no 
+			group by nvl2(hosting_count, 'host', 'guest')]]>
+	</select>
+	
+	<select id="selectAdminApplyHostingCard" resultType="AdminCard">
+	<!-- hosting_date, count -->
+		<![CDATA[select substr(hosting_date, 1, 9) seperator, count(*) value from hosting 
+			where substr(hosting_date, 1, 9) between sysdate-1 and sysdate 
+		group by substr(hosting_date, 1, 9)]]>
+	</select>
+	
+	<select id="selectAdminStateHostingCard" resultType="AdminCard">
+	<!-- hosting_state, count -->
+		<![CDATA[select hosting_state seperator, count(*) value from hosting 
+				where hosting_state<>0 group by hosting_state]]>
+	</select>
+	
+	<select id="selectAdminToGuestClaimCard" resultType="AdminCard">
+	<!-- claim_state, to_guest_count -->
+		<![CDATA[select claim_state seperator, count(*) value from claim 
+			where claim_type=1 group by claim_state]]>
+	</select>
+	
+	<select id="selectAdminToHostClaimCard" resultType="AdminCard">
+	<!-- claim_state, to_host_count -->
+		<![CDATA[select claim_state seperator, count(*) value from claim 
+			where claim_type=2 group by claim_state]]>
+	</select>
+	
+	<select id="selectAdminReivewClaimCard" resultType="AdminCard">
+	<!-- claim_state, to_comment_count -->
+		<![CDATA[select claim_state seperator, count(*) value from claim 
+			where claim_type=3 group by claim_state]]>
+	</select>
+	
+	<select id="selectAdminDashBoardTable" resultType="AdminDashBoardTable">
+		<![CDATA[select reservation_month date_month, reservation_commission_sum, reservation_total_price_sum, reservation_count, hosting_count, member_count, claim_count from (select substr(reservation_date, 1, 5) reservation_month, sum(reservation_commission) reservation_commission_sum, sum(reservation_total_price) reservation_total_price_sum, count(*) reservation_count from reservation group by substr(reservation_date, 1, 5)) join (select substr(hosting_date, 1, 5) hosting_month, count(*) hosting_count from hosting group by substr(hosting_date, 1, 5)) on reservation_month=hosting_month join (select substr(member_join_date, 1, 5) member_month, count(*) member_count from member group by substr(member_join_date, 1, 5)) on reservation_month=member_month join (select substr(claim_date, 1, 5) claim_month, count(*) claim_count from claim group by substr(claim_date, 1, 5)) on reservation_month=claim_month]]> 
+			where reservation_month between #{start} and #{end} 
+		<![CDATA[order by date_month desc]]>
+	</select>
+	
+	<resultMap type="AdminMemberDetail" id="adminMemberDetail">
+		<result column="hosting_count" property="hostingCount"/>
+		<association property="member" javaType="Member">
+			<id column="member_no" property="memberNo"/>
+			<result column="member_email" property="memberEmail"/>
+			<result column="member_password" property="memberPassword"/>
+			<result column="member_name" property="memberName"/>
+			<result column="member_birthday" property="memberBirthday"/>
+			<result column="member_phone" property="memberPhone"/>
+			<result column="member_mailing" property="memberMailing"/>
+			<result column="member_last_login" property="memberLastLogin"/>
+			<result column="member_join_date" property="memberJoinDate"/>
+			<result column="member_state" property="memberState"/>
+			<result column="member_image" property="memberImage"/>
+			<result column="member_profile" property="memberProfile"/>
+			<result column="member_forbidden_date" property="memberForbiddenDate"/>
+			<result column="member_sex" property="memberSex"/>
+			<result column="member_address" property="memberAddress"/>
+			<result column="member_memo" property="memberMemo"/>
+			<result column="member_host_state" property="memberHostState"/>
+		</association>
+		<collection property="reservationHostingList" ofType="AdminReservationHosting">
+			<association property="reservation">
+				<id column="reservation_no" property="reservationNo" />
+				<result column="reservation_hosting_no" property="reservationHostingNo" />
+				<result column="reservation_memberNo" property="reservationMemberNo" />
+				<result column="reservation_state" property="reservationState" />
+				<result column="reservation_canceler" property="reservationCanceler" />
+				<result column="reservation_check_in" property="reservationCheckIn" />
+				<result column="reservation_check_out" property="reservationCheckOut" />
+				<result column="reservation_guest_num" property="reservationGuestNum" />
+				<result column="reservation_commission" property="reservationCommission" />
+				<result column="reservation_total_price" property="reservationTotalPrice" />
+				<result column="reservation_date" property="reservationDate" />
+				<result column="reservation_name" property="reservationName" />
+				<result column="reservation_email" property="reservationEmail" />
+				<result column="reservation_phone" property="reservationPhone" />
+				<result column="reservation_card_num" property="reservationCardNum" />
+			</association>
+			<association property="hosting">
+				<id column="hosting_no" property="hostingNo"/>
+				<result column="hosting_member_no" property="hostingMemberNo"/>
+				<result column="hosting_address" property="hostingAddress"/>
+				<result column="hosting_name" property="hostingName"/>
+				<result column="hosting_date" property="hostingDate"/>
+				<result column="hosting_desc" property="hostingDesc"/>
+				<result column="hosting_image" property="hostingImage"/>
+				<result column="hosting_category" property="hostingCategory"/>
+				<result column="hosting_state" property="hostingState"/>
+				<result column="hosting_price" property="hostingPrice"/>
+				<result column="hosting_private" property="hostingPrivate"/>
+				<result column="hosting_room" property="hostingRoom"/>
+				<result column="hosting_person" property="hostingPerson"/>
+				<result column="hosting_bathroom" property="hostingBathroom"/>
+				<result column="hosting_bed" property="hostingBed"/>
+				<result column="hosting_amenities" property="hostingAmenities"/>
+				<result column="hosting_safety" property="hostingSafety"/>
+				<result column="hosting_facilities" property="hostingFacilities"/>
+				<result column="hosting_rule" property="hostingRule"/>
+				<result column="hosting_rule_detail" property="hostingRuleDetail"/>
+				<result column="hosting_latitude" property="hostingLatitude"/>
+				<result column="hosting_longitude" property="hostingLongitude"/>
+				<result column="hosting_view_count" property="hostingViewCount"/>
+				<result column="hosting_card_num" property="hostingCardNum"/>
+			</association>
+		</collection>
+	</resultMap>
+	
+	<select id="selectAdminMemberDetail" resultMap="adminMemberDetail">
+		select member_table.*, hosting_count, reservation_table.* 
+			from member member_table 
+            left join (select hosting_member_no, count(*) hosting_count from hosting group by hosting_member_no) on member_no=hosting_member_no 
+            full join (select * from reservation right join hosting on hosting_no=reservation_hosting_no where reservation_state!=0) reservation_table on member_no=reservation_member_no 
+			where member_no=#{memberNo}
+	</select>
+	
+	
+	
+	<update id="updateMemberMemo">
+		update member set member_memo=#{memberMemo} where member_no=#{memberNo}
+	</update>
+	
+	<!-- 호스팅 번호를 입력받아 회원 이름을 반환 -->
+	<select id="AdminHostingMemberDetailNo" resultType="_int">
+		select hosting_member_no from hosting where hosting_no=#{hostingNo}
+	</select>
+	
+	<resultMap type="AdminHostingMemberDetail" id="adminHostingMemberDetail">
+		<id column="member_no" property="memberNo" />
+		<association property="member" javaType="Member">
+			<id column="member_no" property="memberNo"/>
+			<result column="member_email" property="memberEmail"/>
+			<result column="member_password" property="memberPassword"/>
+			<result column="member_name" property="memberName"/>
+			<result column="member_birthday" property="memberBirthday"/>
+			<result column="member_phone" property="memberPhone"/>
+			<result column="member_mailing" property="memberMailing"/>
+			<result column="member_last_login" property="memberLastLogin"/>
+			<result column="member_join_date" property="memberJoinDate"/>
+			<result column="member_state" property="memberState"/>
+			<result column="member_image" property="memberImage"/>
+			<result column="member_profile" property="memberProfile"/>
+			<result column="member_forbidden_date" property="memberForbiddenDate"/>
+			<result column="member_sex" property="memberSex"/>
+			<result column="member_address" property="memberAddress"/>
+			<result column="member_memo" property="memberMemo"/>
+			<result column="member_host_state" property="memberHostState"/>
+		</association>
+		<collection property="hostingDetailList" ofType="AdminHostingDetail">
+			<result column="reservation_price_sum" property="reservationPriceSum" />
+			<result column="review_star_avg" property="reviewStarAvg" />
+			<association property="hosting">
+				<id column="hosting_no" property="hostingNo"/>
+				<result column="hosting_member_no" property="hostingMemberNo"/>
+				<result column="hosting_address" property="hostingAddress"/>
+				<result column="hosting_name" property="hostingName"/>
+				<result column="hosting_date" property="hostingDate"/>
+				<result column="hosting_desc" property="hostingDesc"/>
+				<result column="hosting_image" property="hostingImage"/>
+				<result column="hosting_category" property="hostingCategory"/>
+				<result column="hosting_state" property="hostingState"/>
+				<result column="hosting_price" property="hostingPrice"/>
+				<result column="hosting_private" property="hostingPrivate"/>
+				<result column="hosting_room" property="hostingRoom"/>
+				<result column="hosting_person" property="hostingPerson"/>
+				<result column="hosting_bathroom" property="hostingBathroom"/>
+				<result column="hosting_bed" property="hostingBed"/>
+				<result column="hosting_amenities" property="hostingAmenities"/>
+				<result column="hosting_safety" property="hostingSafety"/>
+				<result column="hosting_facilities" property="hostingFacilities"/>
+				<result column="hosting_rule" property="hostingRule"/>
+				<result column="hosting_rule_detail" property="hostingRuleDetail"/>
+				<result column="hosting_latitude" property="hostingLatitude"/>
+				<result column="hosting_longitude" property="hostingLongitude"/>
+				<result column="hosting_view_count" property="hostingViewCount"/>
+				<result column="hosting_card_num" property="hostingCardNum"/>
+			</association>
+		</collection>
+	</resultMap>
+	 
+	<select id="selectAdminMemberHostingDetail" resultMap="adminHostingMemberDetail">
+		<![CDATA[select * from member member_table join (select * from hosting left join (select reservation_hosting_no, sum(reservation_total_price) reservation_price_sum from reservation group by reservation_hosting_no) on hosting_no=reservation_hosting_no left join (select review_hosting_no, avg(review_star) review_star_avg from review group by review_hosting_no) on hosting_no=review_hosting_no) on member_no=hosting_member_no 
+			where member_no=]]>#{memberNo}
+	</select>
+	 
+	<resultMap type="AdminHostingReservationDetail" id="adminHostingReservationDetail">
+		<id column="hosting_no" property="hostingNo" />
+		<association property="hosting" javaType="Hosting">
+			<id column="hosting_no" property="hostingNo"/>
+			<result column="hosting_member_no" property="hostingMemberNo"/>
+			<result column="hosting_address" property="hostingAddress"/>
+			<result column="hosting_name" property="hostingName"/>
+			<result column="hosting_date" property="hostingDate"/>
+			<result column="hosting_desc" property="hostingDesc"/>
+			<result column="hosting_image" property="hostingImage"/>
+			<result column="hosting_category" property="hostingCategory"/>
+			<result column="hosting_state" property="hostingState"/>
+			<result column="hosting_price" property="hostingPrice"/>
+			<result column="hosting_private" property="hostingPrivate"/>
+			<result column="hosting_room" property="hostingRoom"/>
+			<result column="hosting_person" property="hostingPerson"/>
+			<result column="hosting_bathroom" property="hostingBathroom"/>
+			<result column="hosting_bed" property="hostingBed"/>
+			<result column="hosting_amenities" property="hostingAmenities"/>
+			<result column="hosting_safety" property="hostingSafety"/>
+			<result column="hosting_facilities" property="hostingFacilities"/>
+			<result column="hosting_rule" property="hostingRule"/>
+			<result column="hosting_rule_detail" property="hostingRuleDetail"/>
+			<result column="hosting_latitude" property="hostingLatitude"/>
+			<result column="hosting_longitude" property="hostingLongitude"/>
+			<result column="hosting_view_count" property="hostingViewCount"/>
+			<result column="hosting_card_num" property="hostingCardNum"/>
+		</association>
+		<collection property="reservationList" ofType="Reservation">
+			<id column="reservation_no" property="reservationNo" />
+			<result column="reservation_hosting_no" property="reservationHostingNo" />
+			<result column="reservation_member_no" property="reservationMemberNo" />
+			<result column="reservation_state" property="reservationState" />
+			<result column="reservation_canceler" property="reservationCanceler" />
+			<result column="reservation_check_in" property="reservationCheckIn" />
+			<result column="reservation_check_out" property="reservationCheckOut" />
+			<result column="reservation_guest_num" property="reservationGuestNum" />
+			<result column="reservation_commission" property="reservationCommission" />
+			<result column="reservation_total_price" property="reservationTotalPrice" />
+			<result column="reservation_date" property="reservationDate" />
+			<result column="reservation_name" property="reservationName" />
+			<result column="reservation_email" property="reservationEmail" />
+			<result column="reservation_phone" property="reservationPhone" />
+			<result column="reservation_card_num" property="reservationCardNum" />
+		</collection>
+	</resultMap>
+	
+	<select id="selectAdminHostingDetail" resultMap="adminHostingReservationDetail">
+		<![CDATA[select * from hosting left join reservation on hosting_no=reservation_hosting_no 
+			where hosting_state<>0 and hosting_no=]]>#{hostingNo}
+	</select>
+	
+	<!-- ============================================== 기타관리 - 게시판 관리 ========================================================== -->
+
+	
+	<!-- Board 테이블 관련 SQL 문 -->
+	<select id="selectAllBoard" resultType="Board">
+		select * from board
+	</select>
+ 
+ 
+	<!-- ### 게시판 등록/수정하기 탭 ### -->
+	<!-- 게시판 등록/수정하기 탭에서 셀렉트 박스의 항목(1: 새소식, 2:이벤트, 3:칼럼)
+	선택 후 제목, 내용 기입 후 저장하기 버튼 클릭 -->
+	<insert id="insertAdminBoardNotice">
+		<selectKey resultType="int" keyProperty="boardNo" order="BEFORE">
+			select board_seq.nextval from dual
+		</selectKey>
+		insert into board values(#{boardNo}, #{boardWriterNo}, #{boardTitle}, #{boardContent}, #{boardImage}, 1,
+		#{boardCategory},sysdate, 0, 1)
+	</insert>
+	
+	<!-- 게시판 등록/수정하기 탭에서 셀렉트 박스의 항목(1: 새소식, 2: 이벤트, 3: 칼럼) 선택 후 제목, 기존 내용 수정 -->
+	<update id="updateAdminBoardNoticeContent">
+		update board set board_content=#{boardContent}, board_image=#{boardImage} where board_no=#{boardNo}
+	</update>
+	
+	<!-- 게시판 등록/수정하기 탭에서 셀렉트 박스의 항목
+ 	게시판 관리(1: 새소식, 2: 이벤트, 3: 칼럼)
+ 	도움말 관리(1: 예약 및 결제, 2:계정 3:호스팅, 4:이용방법, 5:약관, 6:안전 및 접근성) 
+ 	선택 시 제목, 기존 내용 DB에서 검색 후 내용 불러오기   -->
+ 	<select id="selectBoardCategoryTitleEqual" resultType="Board">
+ 		select * from board  where board_type=#{boardType} and board_category=#{boardCategory} and board_title=#{boardTitle}
+ 	</select>
+ 	
+ 	<!-- 게시판 등록/수정하기 탭에서 셀렉트 박스 선택 후 
+ 	제목 작성 시 기존에 존재하는 데이터가 있을 경우 Suggest 기능을 사용하여 검색 -->
+ 	<select id="selectBoardCategoryTitleLike" resultType="Board">
+ 		select * from board  where board_type=#{boardType} and board_category=#{boardCategory} and board_title like '%'||#{boardTitle}||'%'
+ 	</select>
+	
+	 
+	<!-- "변경" 버튼 클릭 시 상태 변경(0: 게시중지, 1:게시중) -->
+	<!-- => (게시중지 -> 게시중 / 게시중 -> 게시중지) -->
+	<update id="updateAdminBoardState" parameterType="Board">
+		update board set board_state=#{boardState} where board_no=#{boardNo}
+	</update>
+	
+	<!-- ### Admin > 기타 관리 > 게시판 관리 다중 검색 ### -->
+	
+	<select id="selectAdminEtcNotice" resultType="Board">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select * from board where rownum <= ]]> #{count} and board_type=1 order by board_no desc 
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select * from board where rownum <=]]> #{count} and board_type=1
+			<trim prefix="and" suffixOverrides="and|or">
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<choose>
+					<when test="category==0">1=1</when>
+					<when test="category==1">board_category=1</when>
+					<when test="category==2">board_category=2</when>
+					<when test="category==3">board_category=3</when>
+				</choose>
+				</trim>
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="titles!=null or writers!=null">
+					<foreach collection="titles" item="title">
+						board_title like '%'||#{title}||'%' or			
+					</foreach>
+					<foreach collection="writers" item="writer">
+						board_writer_no like '%'||#{writer}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and" >
+				<if test="states!=null">
+					<!-- 들어온 정보가 없을 경우 데이터를 안보냄 -->
+					<if test="states.size == 0">
+						1=0
+					</if>
+					<foreach collection="states" item="state">
+						board_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+			</trim>
+			order by board_no desc
+		</when>
+		</choose>
+	</select>
+	
+
+	
+	<!-- ============================================== 기타관리 - 게시판 관리 ========================================================== -->
+
+	<!-- ============================================== 기타관리 - 도움말 관리 ========================================================== -->
+
+	
+	
+	<!-- ### 도움말 등록/수정하기 탭 ### -->
+	<!-- 도움말 등록/수정하기 탭에서 셀렉트 박스의 항목(1: 예약 및 결제, 2:계정 3:호스팅, 
+	4:이용방법, 5:약관, 6:안전 및 접근성) 선택 후 제목, 내용 기입 후 저장하기 버튼 클릭 -->
+	 <insert id="insertAdminBoardHelp">
+		<selectKey resultType="int" keyProperty="boardNo" order="BEFORE">
+			select board_seq.nextval from dual
+		</selectKey>
+		insert into board values(#{boardNo}, #{boardWriterNo}, #{boardTitle}, #{boardContent}, null, 1,
+		#{boardCategory},sysdate, 0, 2)
+	</insert>
+	
+	<!-- 도움말 등록/수정하기 탭에서 셀렉트 박스의 항목(1: 예약 및 결제, 2:계정 3:호스팅, 
+	4:이용방법, 5:약관, 6:안전 및 접근성) 선택 후 제목, 기존 내용 수정 -->
+	<update id="updateAdminBoardHelpContent">
+		update board set board_content=#{boardContent} where board_no=#{boardNo}
+	</update>
+	
+	<!-- 게시판 등록/수정하기 탭에서 셀렉트 박스의 항목
+ 	게시판 관리(1: 새소식, 2: 이벤트, 3: 칼럼)
+ 	도움말 관리(1: 예약 및 결제, 2:계정 3:호스팅, 4:이용방법, 5:약관, 6:안전 및 접근성) 
+ 	선택 시 제목, 기존 내용 DB에서 검색 후 내용 불러오기   -->
+ 	<select id="selectBoardHelpCategoryTitleEqual" resultType="Board">
+ 		select * from board  where board_type=#{boardType} and board_category=#{boardCategory} and board_title=#{boardTitle}
+ 	</select>
+ 	
+ 	<!-- 게시판 등록/수정하기 탭에서 셀렉트 박스 선택 후 
+ 	제목 작성 시 기존에 존재하는 데이터가 있을 경우 Suggest 기능을 사용하여 검색 -->
+ 	<select id="selectBoardHelpCategoryTitleLike" resultType="Board">
+ 		select * from board  where board_type=#{boardType} and board_category=#{boardCategory} and board_title like '%'||#{boardTitle}||'%'
+ 	</select>
+
+	<!-- "변경" 버튼 클릭 시 상태 변경(0: 게시중지, 1:게시중) -->
+	<!-- => (게시중지 -> 게시중 / 게시중 -> 게시중지) -->
+	<!-- 
+	<update id="updateAdminBoardHelpState" parameterType="Board">
+		update board set board_state=#{boardState} where board_no=#{boardNo} and board_type=2
+	</update> 
+	-->
+	 
+	<!-- ### 도움말 테이블 목록 ### -->
+	<!-- ### Admin > 기타 관리 > 도움말 관리 다중 검색 ### -->
+	
+	<select id="selectAdminEtcHelp" resultType="Board">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select * from board where rownum <=]]> #{count} and board_type=2 order by board_no desc
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select * from board where rownum <=]]> #{count} and board_type=2
+			<trim prefix="and" suffixOverrides="and|or">
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<choose>
+					<when test="category==0">1=1</when>
+					<when test="category==1">board_category=1</when>
+					<when test="category==2">board_category=2</when>
+					<when test="category==3">board_category=3</when>
+					<when test="category==4">board_category=4</when>
+					<when test="category==5">board_category=5</when>
+					<when test="category==6">board_category=6</when>
+				</choose>
+				</trim>
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="titles!=null or writers!=null">
+					<foreach collection="titles" item="title">
+						board_title like '%'||#{title}||'%' or			
+					</foreach>
+					<foreach collection="writers" item="writer">
+						board_writer_no like '%'||#{writer}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and" >
+				<if test="states!=null">
+					<!-- 들어온 정보가 없을 경우 데이터를 안보냄 -->
+					<if test="states.size == 0">
+						1=0
+					</if>
+					<foreach collection="states" item="state">
+						board_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+			</trim>
+			order by board_no desc
+		</when>
+		</choose>
+	</select>
+	
+	<!-- ============================================== 기타관리 - 도움말 관리 ========================================================== -->
+
+	<!-- ============================================== 기타관리 - 약관 관리 ========================================================== -->
+	
+	<!-- ### 약관 관리 등록/수정하기 탭 ### -->
+	<!-- BOARD 테이블의 이용약관(게시판종류)에 (이용약관|개인정보 처리방침|위치기반서비스 이용약관
+	내용 등록(최초 1회)  -->
+	<insert id="insertAdminBoardTerms">
+		<selectKey resultType="int" keyProperty="boardNo" order="BEFORE">
+			select board_seq.nextval from dual
+		</selectKey>
+		insert into board values(#{boardNo}, #{boardWriterNo}, 
+		<choose>
+		<when test="boardCategory==1">
+		'이용약관',
+		</when>
+		<when test="boardCategory==2">
+		'개인정보 처리방침',
+		</when>
+		<when test="boardCategory==3">
+		'위치기반서비스 이용약관',
+		</when>
+		</choose>
+		#{boardContent}, null, 1, #{boardCategory},sysdate, 0, 3)
+	</insert>
+	
+	<!-- BOARD 테이블에서 이용약관(게시판종류)에서 (이용약관|개인정보 처리방침|위치기반서비스 이용약관)
+	내용 수정하기 -->
+	<update id="updateAdminBoardTermsContent">
+		update board set board_content=#{boardContent} where board_no=#{boardNo}
+	</update>
+	
+	<!-- 관리자 페이지의 약관관리 탭에서 셀렉트 박스 (이용약관|개인정보 처리방침|위치서비스기반 이용약관)
+	선택 시 이용약관 내용 불러오기,  [초기화버튼]클릭 시 이전에 내용 다시 불러오기 -->
+	<select id="selectBoardTermsCategoryEqual" resultType="Board">
+ 		select * from board where board_type=3 and board_category=#{boardCategory}
+ 	</select>
+ 	
+	<!-- ============================================== 기타관리 - 약관 관리 ========================================================== -->
+
+ 	<!-- 게시글 번호를 전달받아 게시판 테이블에서 전체 검색 -->
+ 	<select id="selectBoardNo" resultType="Board">
+ 		select * from board where board_no=#{boardNo} 
+ 	</select>
+
+	
+	<!-- ============================================== 예약관리 - 예약정보 ========================================================== -->
+	<!-- ============================================================================================================================= -->
+	<!-- ============================================================================================================================= -->
+	<!-- ============================================================================================================================= -->
+	<!-- ============================================== 예약관리 - 예약정보 ========================================================== -->
+	
+	<!-- Reservation 테이블 관련 SQL 문 -->
+	<select id="selectAdminReservationTable" resultType="Reservation">
+		<choose>
+		<when test="filter=='off'">
+			<![CDATA[select * from reservation where rownum <=]]> #{count}
+		</when>
+		<when test="filter!='off'">
+			<![CDATA[select * from reservation where rownum <=]]> #{count}
+			<trim prefix="and" suffixOverrides="and|or">
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="checkins!=null or checkouts!=null">
+					<foreach collection="checkins" item="checkin">
+						reservation_check_in between #{checkin.start} and to_date(#{checkin.end})+1 or 
+					</foreach>
+					<foreach collection="checkouts" item="checkout">
+						reservation_check_out between #{checkout.start} and to_date(#{checkout.end})+1 or 
+					</foreach>
+				</if>
+				</trim>
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and">
+				<if test="nos!=null or memberNos!=null or hostingNos!=null or payers!=null">
+					<foreach collection="nos" item="no">
+						reservation_no = #{no} or			
+					</foreach>
+					<foreach collection="memberNos" item="memberNo">
+						reservation_member_no like '%'||#{memberNo}||'%' or			
+					</foreach>
+					<foreach collection="hostingNos" item="hostingNo">
+						reservation_hosting_no like '%'||#{hostingNo}||'%' or			
+					</foreach>
+					<foreach collection="payers" item="payer">
+						reservation_name like '%'||#{payers}||'%' or			
+					</foreach>
+				</if>
+				</trim>
+				<trim prefix="(" suffix=") and" suffixOverrides="or|and" >
+				<if test="states!=null">
+					<!-- 들어온 정보가 없을 경우 데이터를 안보냄 -->
+					<if test="states.size == 0">
+						1=0
+					</if>
+					<foreach collection="states" item="state">
+						reservation_state=#{state} or
+					</foreach>
+				</if>
+				</trim>
+			</trim>
+		</when>
+		</choose>
+	</select>
+	
+	<select id="selectMemberMailing" resultType="string">
+		select member_email from member where member_mailing=1
+	</select>
+</mapper>

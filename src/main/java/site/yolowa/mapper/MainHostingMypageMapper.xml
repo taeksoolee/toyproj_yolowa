@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.yolowa.mapper.MainHostingMypageMapper">
+	<insert id="insertHosting">
+		<selectKey resultType="int" keyProperty="hostingNo" order="BEFORE">
+			select hosting_seq.nextval from dual
+		</selectKey>
+		insert into hosting values(#{hostingNo}, #{hostingMemberNo}, #{hostingAddress}, #{hostingName}, sysdate, 
+		#{hostingDesc}, #{hostingImage}, #{hostingCategory}, 1, #{hostingPrice}, #{hostingPrivate}, #{hostingRoom}, #{hostingPerson}, 
+		#{hostingBathroom}, #{hostingBed}, #{hostingAmenities}, #{hostingSafety}, #{hostingFacilities}, #{hostingRule}, #{hostingRuleDetail}, 
+		#{hostingLatitude}, #{hostingLongitude}, 0, #{hostingCardNum})
+	</insert>
+	
+	<!-- 마이 페이지 헤더 숫자 카운팅 -->
+	<select id="selectMypageHeaderCount" resultType="MypageHeaderCount">
+		select 
+		    (select count(wishlist_hosting_no) from wishlist join hosting on wishlist_hosting_no=hosting_no where hosting_member_no=#{loginMemberNo})wishlist_count,
+		    (select count(message_no) from message where message_receiver_no=#{loginMemberNo} and message_state=1)message_count,
+		    (select count(review_no) from review join hosting on review_hosting_no=hosting_no where review_state=1 and hosting_member_no=#{loginMemberNo})review_count,
+		    (select count(reservation_no) from reservation join hosting on reservation_hosting_no=hosting_no where hosting_member_no=#{loginMemberNo} and reservation_state=1)reservation_count
+		from dual
+	</select>
+	
+	<!-- 숙소관리 페이지 카운팅 -->
+	<select id="selectMypageHostingCount" resultType="int">
+		select count(hosting_no) from hosting where hosting_member_no=#{hostingMemberNo} and hosting_state=#{hostingState}
+	</select>
+	
+	<!-- 숙소관리 페이지 디스플레이 -->
+	<select id="selectMypageHostingList" resultType="Hosting">
+		select * from hosting where hosting_member_no=#{hostingMemberNo} and hosting_state=#{hostingState} order by hosting_date ${order}
+	</select>
+	
+	<!-- 숙소관리 페이지 업데이트 -->
+	<update id="updateMypageHosting">
+		update hosting set hosting_state=#{hostingState} where hosting_no=#{hostingNo}
+	</update>
+	
+	<!-- 숙소관리 페이지 업데이트를 위한 셀렉 -->
+	<select id="selectMypageHosting" resultType="Hosting">
+		select * from hosting where hosting_member_no=#{hostingMemberNo} and hosting_no=#{hostingNo}
+	</select>
+	
+	<!-- 숙소 업데이트 -->
+	<update id="updateMypageHostingList">
+		update hosting
+			<set>
+			<if test="hostingAddress != null">hosting_Address=#{hostingAddress},</if>
+			<if test="hostingName != null">hosting_Name=#{hostingName},</if>
+			<if test="hostingDesc != null">hosting_Desc=#{hostingDesc},</if>
+			<if test="hostingImage != null">hosting_Image=#{hostingImage},</if>
+			<if test="hostingCategory != null">hosting_Category=#{hostingCategory},</if>
+			<if test="hostingPrice != null">hosting_Price=#{hostingPrice},</if>
+			<if test="hostingPrivate != null">hosting_Private=#{hostingPrivate},</if>
+			<if test="hostingRoom != null">hosting_Room=#{hostingRoom},</if>
+			<if test="hostingPerson != null">hosting_Person=#{hostingPerson},</if>
+			<if test="hostingBathroom != null">hosting_Bathroom=#{hostingBathroom},</if>
+			<if test="hostingAmenities != null">hosting_Amenities=#{hostingAmenities},</if>
+			<if test="hostingSafety != null">hosting_Safety=#{hostingSafety},</if>
+			<if test="hostingFacilities != null">hosting_Facilities=#{hostingFacilities},</if>
+			<if test="hostingRule != null">hosting_Rule=#{hostingRule},</if>
+			<if test="hostingRuleDetail != null">hosting_Rule_Detail=#{hostingRuleDetail},</if>
+			<if test="hostingLatitude != null">hosting_Latitude=#{hostingLatitude},</if>
+			<if test="hostingLongitude != null">hosting_Longitude=#{hostingLongitude},</if>
+			<if test="hostingCardNum != null">hosting_Card_Num=#{hostingCardNum}</if>
+			</set>
+		where hosting_member_no=#{hostingMemberNo} and hosting_no=#{hostingNo}
+	</update>
+</mapper>
