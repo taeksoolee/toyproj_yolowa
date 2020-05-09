@@ -1,16 +1,6 @@
 # proj-spring-yolowa
 itwill final project
-
-'''
-#src/main/webapp/WEB-INF/spring/config.properties
-# jdbc configuration
-#driver = 
-driver = 
-url = 
-username = 
-password = 
-
-#mail
-google-id = 
-google-password = 
-'''
+<br>
+spring, mybatis, VueJS, jquery
+<br>
+디자인은 template 이용
